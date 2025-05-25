@@ -1,0 +1,222 @@
+AWSTemplateFormatVersion: '2010-09-09'
+Transform: AWS::Serverless-2016-10-31
+Description: 'running-log Running Log Application Backend
+
+  '
+Globals:
+  Function:
+    Timeout: 30
+    MemorySize: 512
+    Runtime: python3.13
+    Environment:
+      Variables:
+        RUNS_TABLE:
+          Ref: RunsTable
+        USERS_TABLE:
+          Ref: UsersTable
+        TARGETS_TABLE:
+          Ref: TargetsTable
+Resources:
+  RunsFunction:
+    Type: AWS::Serverless::Function
+    Properties:
+      CodeUri: RunsFunction
+      Handler: app.lambda_handler
+      Runtime: python3.13
+      Environment:
+        Variables:
+          RUNS_TABLE:
+            Ref: RunsTable
+          USERS_TABLE:
+            Ref: UsersTable
+          TARGETS_TABLE:
+            Ref: TargetsTable
+      Events:
+        RootApi:
+          Type: Api
+          Properties:
+            Path: /
+            Method: ANY
+        RunsApi:
+          Type: Api
+          Properties:
+            Path: /{proxy+}
+            Method: ANY
+      Policies:
+      - DynamoDBCrudPolicy:
+          TableName:
+            Ref: RunsTable
+      - DynamoDBCrudPolicy:
+          TableName:
+            Ref: UsersTable
+      - DynamoDBCrudPolicy:
+          TableName:
+            Ref: TargetsTable
+    Metadata:
+      SamResourceId: RunsFunction
+  UsersTable:
+    Type: AWS::DynamoDB::Table
+    Properties:
+      TableName:
+        Fn::Sub: ${AWS::StackName}-Users
+      AttributeDefinitions:
+      - AttributeName: user_id
+        AttributeType: S
+      - AttributeName: email
+        AttributeType: S
+      KeySchema:
+      - AttributeName: user_id
+        KeyType: HASH
+      GlobalSecondaryIndexes:
+      - IndexName: email-index
+        KeySchema:
+        - AttributeName: email
+          KeyType: HASH
+        Projection:
+          ProjectionType: ALL
+      BillingMode: PAY_PER_REQUEST
+  RunsTable:
+    Type: AWS::DynamoDB::Table
+    Properties:
+      TableName:
+        Fn::Sub: ${AWS::StackName}-Runs
+      AttributeDefinitions:
+      - AttributeName: user_id
+        AttributeType: S
+      - AttributeName: run_id
+        AttributeType: S
+      - AttributeName: run_date
+        AttributeType: S
+      KeySchema:
+      - AttributeName: user_id
+        KeyType: HASH
+      - AttributeName: run_id
+        KeyType: RANGE
+      GlobalSecondaryIndexes:
+      - IndexName: user-date-index
+        KeySchema:
+        - AttributeName: user_id
+          KeyType: HASH
+        - AttributeName: run_date
+          KeyType: RANGE
+        Projection:
+          ProjectionType: ALL
+      BillingMode: PAY_PER_REQUEST
+  TargetsTable:
+    Type: AWS::DynamoDB::Table
+    Properties:
+      TableName:
+        Fn::Sub: ${AWS::StackName}-Targets
+      AttributeDefinitions:
+      - AttributeName: user_id
+        AttributeType: S
+      - AttributeName: target_id
+        AttributeType: S
+      - AttributeName: period
+        AttributeType: S
+      KeySchema:
+      - AttributeName: user_id
+        KeyType: HASH
+      - AttributeName: target_id
+        KeyType: RANGE
+      GlobalSecondaryIndexes:
+      - IndexName: user-period-index
+        KeySchema:
+        - AttributeName: user_id
+          KeyType: HASH
+        - AttributeName: period
+          KeyType: RANGE
+        Projection:
+          ProjectionType: ALL
+      BillingMode: PAY_PER_REQUEST
+  RunningLogUserPool:
+    Type: AWS::Cognito::UserPool
+    Properties:
+      UserPoolName:
+        Fn::Sub: ${AWS::StackName}-user-pool
+      UsernameAttributes:
+      - email
+      Policies:
+        PasswordPolicy:
+          MinimumLength: 8
+          RequireUppercase: true
+          RequireLowercase: true
+          RequireNumbers: true
+          RequireSymbols: false
+      AutoVerifiedAttributes:
+      - email
+      VerificationMessageTemplate:
+        DefaultEmailOption: CONFIRM_WITH_CODE
+        EmailSubject: Running Log - Verify your email
+        EmailMessage: Welcome to Running Log! Your verification code is {####}
+      Schema:
+      - Name: email
+        AttributeDataType: String
+        Required: true
+        Mutable: true
+      - Name: given_name
+        AttributeDataType: String
+        Required: true
+        Mutable: true
+      - Name: family_name
+        AttributeDataType: String
+        Required: true
+        Mutable: true
+  RunningLogUserPoolClient:
+    Type: AWS::Cognito::UserPoolClient
+    Properties:
+      UserPoolId:
+        Ref: RunningLogUserPool
+      ClientName:
+        Fn::Sub: ${AWS::StackName}-client
+      GenerateSecret: false
+      AccessTokenValidity: 1
+      IdTokenValidity: 1
+      RefreshTokenValidity: 30
+      TokenValidityUnits:
+        AccessToken: days
+        IdToken: days
+        RefreshToken: days
+      ExplicitAuthFlows:
+      - ALLOW_ADMIN_USER_PASSWORD_AUTH
+      - ALLOW_USER_PASSWORD_AUTH
+      - ALLOW_USER_SRP_AUTH
+      - ALLOW_REFRESH_TOKEN_AUTH
+      PreventUserExistenceErrors: ENABLED
+Outputs:
+  RunsApi:
+    Description: API Gateway endpoint URL for Prod stage for Runs function
+    Value:
+      Fn::Sub: https://${ServerlessRestApi}.execute-api.${AWS::Region}.amazonaws.com/Prod/
+  RunsFunction:
+    Description: Runs Lambda Function ARN
+    Value:
+      Fn::GetAtt:
+      - RunsFunction
+      - Arn
+  RunsFunctionIamRole:
+    Description: Implicit IAM Role created for Runs function
+    Value:
+      Fn::GetAtt:
+      - RunsFunctionRole
+      - Arn
+  CognitoUserPoolId:
+    Description: Cognito User Pool ID
+    Value:
+      Ref: RunningLogUserPool
+    Export:
+      Name:
+        Fn::Sub: ${AWS::StackName}-UserPoolId
+  CognitoClientId:
+    Description: Cognito User Pool Client ID
+    Value:
+      Ref: RunningLogUserPoolClient
+    Export:
+      Name:
+        Fn::Sub: ${AWS::StackName}-ClientId
+  CognitoUserPoolArn:
+    Description: Cognito User Pool ARN
+    Value:
+      Fn::GetAtt:
+      - RunningLogUserPool
+      - Arn
