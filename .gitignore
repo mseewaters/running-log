@@ -40,3 +40,4 @@ htmlcov/
 # Project files
 running-app-*.md
 prompt-*.md
+check_versions.py
