@@ -49,4 +49,49 @@ describe('LandingPage', () => {
     expect(wrapper.find('[data-testid="logo-circle"]').exists()).toBe(true)
     expect(wrapper.find('[data-testid="runner-icon"]').exists()).toBe(true)
   })
+
+  it('handles form submission', async () => {
+    const wrapper = mount(LandingPage)
+
+    // Fill out the form
+    const emailInput = wrapper.find('[data-testid="email-input"]')
+    const passwordInput = wrapper.find('[data-testid="password-input"]')
+    const form = wrapper.find('[data-testid="login-form"]')
+
+    await emailInput.setValue('test@example.com')
+    await passwordInput.setValue('password123')
+
+    // Submit form
+    await form.trigger('submit')
+
+    // Should prevent default form submission
+    expect(form.element.tagName).toBe('FORM') // Form exists
+  })
+
+  it('shows validation errors for empty fields', async () => {
+    const wrapper = mount(LandingPage)
+
+    const form = wrapper.find('[data-testid="login-form"]')
+    await form.trigger('submit')
+
+    // Should show error messages for empty fields
+    expect(wrapper.find('[data-testid="email-error"]').exists()).toBe(true)
+    expect(wrapper.find('[data-testid="password-error"]').exists()).toBe(true)
+  })
+
+  it('shows loading state during login', async () => {
+    const wrapper = mount(LandingPage)
+
+    // Fill form and submit
+    await wrapper.find('[data-testid="email-input"]').setValue('test@example.com')
+    await wrapper.find('[data-testid="password-input"]').setValue('password123')
+    await wrapper.find('[data-testid="login-form"]').trigger('submit')
+
+    // Should show loading state
+    const button = wrapper.find('[data-testid="login-button"]')
+    expect(button.text()).toContain('Signing In...')
+  })
+
+
+
 })

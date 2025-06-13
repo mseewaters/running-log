@@ -20,13 +20,18 @@
 
       <!-- Tagline -->
       <p data-testid="tagline" class="tagline">
-        Track your runs. Hit your goals.
+        Track your runs. Hit your goals
       </p>
     </div>
 
-    <!-- Rest of component stays the same -->
+    <!-- Login Card -->
     <div data-testid="login-card" class="login-card">
-      <form data-testid="login-form">
+      <!-- General error message -->
+      <div v-if="errors.general" class="error-message general-error">
+        {{ errors.general }}
+      </div>
+
+      <form data-testid="login-form" @submit.prevent="handleLogin">
 
         <!-- Email Input -->
         <div class="form-group">
@@ -36,7 +41,11 @@
             type="email"
             placeholder="Value"
             class="form-input"
+            v-model="email"
           />
+          <div v-if="errors.email" data-testid="email-error" class="error-message">
+            {{ errors.email }}
+          </div>
         </div>
 
         <!-- Password Input -->
@@ -47,7 +56,11 @@
             type="password"
             placeholder="Value"
             class="form-input"
+            v-model="password"
           />
+          <div v-if="errors.password" data-testid="password-error" class="error-message">
+            {{ errors.password }}
+          </div>
         </div>
 
         <!-- Sign In Button -->
@@ -55,20 +68,21 @@
           data-testid="login-button"
           type="submit"
           class="login-button"
+          :disabled="isLoading"
         >
-          Sign In
+          {{ isLoading ? 'Signing In...' : 'Sign In' }}
         </button>
       </form>
 
       <!-- Forgot Password Link -->
-      <div class="text-left mt-4">
+      <div class="text-center mt-4">
         <a href="#" class="forgot-link">
           Forgot password?
         </a>
       </div>
 
       <!-- Register Link -->
-      <div class="text-left mt-4">
+      <div class="text-center mt-4">
         <span class="register-text">Don't have an account? </span>
         <a data-testid="register-link" href="#" class="register-link">
           Register
@@ -80,6 +94,63 @@
 </template>
 
 <script setup lang="ts">
+import { ref } from 'vue'
+import { authService } from '@/services/authService'
+
 // Import the image
 import runnerImage from '@/assets/runner dark.png'
+
+// Reactive state
+const email = ref('')
+const password = ref('')
+const isLoading = ref(false)
+const errors = ref({
+  email: '',
+  password: '',
+  general: ''
+})
+
+// Form validation
+const validateForm = () => {
+  errors.value = { email: '', password: '', general: '' }
+
+  if (!email.value) {
+    errors.value.email = 'Email is required'
+  }
+
+  if (!password.value) {
+    errors.value.password = 'Password is required'
+  }
+
+  return !errors.value.email && !errors.value.password
+}
+
+// Handle login submission
+const handleLogin = async () => {
+  if (!validateForm()) {
+    return
+  }
+
+  isLoading.value = true
+  errors.value.general = ''
+
+  try {
+    // Call real backend API
+    const response = await authService.login({
+      email: email.value,
+      password: password.value
+    })
+
+    console.log('Login successful:', response)
+
+    // TODO: Redirect to dashboard
+    alert(`Login successful! Welcome ${response.email}`)
+
+  } catch (error: any) {
+    console.error('Login failed:', error)
+    errors.value.general = error.message || 'Login failed. Please try again.'
+  } finally {
+    isLoading.value = false
+  }
+}
 </script>

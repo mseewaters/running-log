@@ -14,6 +14,14 @@ Globals:
         RUNS_TABLE: !Ref RunsTable
         USERS_TABLE: !Ref UsersTable  
         TARGETS_TABLE: !Ref TargetsTable
+        COGNITO_USER_POOL_ID: !Ref RunningLogUserPool     
+        COGNITO_CLIENT_ID: !Ref RunningLogUserPoolClient  
+        JWT_SECRET: "your-jwt-secret-key"                 
+  Api:
+    Cors:
+      AllowMethods: "'GET,POST,PUT,DELETE,OPTIONS'"
+      AllowHeaders: "'Content-Type,X-Amz-Date,Authorization,X-Api-Key,X-Amz-Security-Token'"
+      AllowOrigin: "'*'"
 
 Resources:
   RunsFunction:
@@ -47,6 +55,17 @@ Resources:
             TableName: !Ref UsersTable
         - DynamoDBCrudPolicy:
             TableName: !Ref TargetsTable
+        # Add Cognito permissions:
+        - Version: "2012-10-17"
+          Statement:
+            - Effect: Allow
+              Action:
+                - cognito-idp:AdminInitiateAuth
+                - cognito-idp:AdminCreateUser
+                - cognito-idp:AdminSetUserPassword
+                - cognito-idp:GetUser
+                - cognito-idp:ListUsers
+              Resource: !GetAtt RunningLogUserPool.Arn
 
   # DynamoDB Tables
   UsersTable:

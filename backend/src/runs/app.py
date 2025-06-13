@@ -1,6 +1,7 @@
 # src/runs/app.py
 import os
 from fastapi import FastAPI, HTTPException, Depends, Header
+from fastapi.middleware.cors import CORSMiddleware
 from fastapi.security import HTTPBearer, HTTPAuthorizationCredentials
 from pydantic import BaseModel, Field, ValidationError
 from typing import List, Optional
@@ -30,6 +31,18 @@ except ImportError as e:
 
 app = FastAPI(title="Running Log API", version="1.0.0")
 print("FastAPI app created!")
+
+# Add CORS middleware - put this right after creating the app
+app.add_middleware(
+    CORSMiddleware,
+    allow_origins=[
+        "http://localhost:5173",
+        "http://localhost:3000",
+    ],  # Your frontend URLs
+    allow_credentials=True,
+    allow_methods=["*"],
+    allow_headers=["*"],
+)
 
 # JWT Security scheme
 security = HTTPBearer()
