@@ -1,0 +1,140 @@
+/* src/assets/main.css - CSS with color variables */
+@import url('https://fonts.googleapis.com/css2?family=Nunito+Sans:wght@400;500;600;700&display=swap');
+@import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap');
+@import './variables.css';
+
+/* Reset and base styles */
+* {
+  box-sizing: border-box;
+  margin: 0;
+  padding: 0;
+}
+
+body {
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+  background-color: var(--charcoal-dark);
+  color: var(--white-off);
+}
+
+/* Landing page styles */
+.landing-container {
+  min-height: 100vh;
+  padding: 1rem;
+  background-color: var(--charcoal-dark);
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+}
+
+.logo-section {
+  text-align: center;
+  margin-bottom: 3rem;
+}
+
+.logo-container {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  margin: 0 auto 0.0rem;
+}
+
+.runner-icon {
+  width: 15rem;
+  height: 15rem;
+  object-fit: contain;
+}
+
+.app-title {
+  color: var(--yellow-safety);
+  font-size: 3.0rem;
+  font-weight: 700;
+  letter-spacing: 0.1em;
+  margin-bottom: 0.2rem;
+}
+
+.tagline {
+  color: var(--yellow-safety);
+  font-size: 1.125rem;
+  font-weight: 500;
+  font-style: italic;
+  text-align: right;
+}
+
+.login-card {
+  width: 100%;
+  max-width: 24rem;
+  background-color: var(--charcoal-medium);
+  border-radius: 1rem;
+  border: 1px solid var(--gray-cool);
+  padding: 1.5rem;
+}
+
+.form-group {
+  margin-bottom: 1rem;
+}
+
+.form-label {
+  color: var(--white-off);
+  font-size: 1rem;
+  font-weight: 500;
+  display: block;
+  margin-bottom: 0.5rem;
+}
+
+.form-input {
+  width: 100%;
+  padding: 0.75rem 1rem;
+  background-color: var(--white-off);
+  border: none;
+  border-radius: 0.5rem;
+  color: var(--white-off);
+  font-size: 1rem;
+  min-height: 44px; /* Touch target */
+}
+
+.form-input::placeholder {
+  color: var(--gray-placeholder);
+}
+
+.login-button {
+  width: 100%;
+  background-color: var(--yellow-safety);
+  color: var(--charcoal-dark);
+  padding: 0.75rem;
+  border: none;
+  border-radius: 0.5rem;
+  font-weight: 600;
+  font-size: 1.125rem;
+  margin-top: 1.5rem;
+  margin-bottom: 1.5rem;
+  min-height: 44px; /* Touch target */
+  cursor: pointer;
+}
+
+.forgot-link, .register-link {
+  color: var(--blue-cyan);
+  text-decoration: none;
+  font-size: 0.875rem;
+  font-weight: 500;
+  text-align: left;
+}
+
+.forgot-link:hover, .register-link:hover {
+  text-decoration: underline;
+}
+
+.text-left {
+  text-align: left;
+}
+
+.mt-4 {
+  margin-top: 0.2rem;
+}
+
+.register-text {
+  color: var(--white-off);
+  font-size: 0.875rem;
+  padding-right: 0.5rem;
+}

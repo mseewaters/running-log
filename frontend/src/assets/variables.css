@@ -1,0 +1,46 @@
+:root {
+  /* Brand Colors */
+  --charcoal-medium: #40454B;
+  --gray-cool: #B0B0B0;
+  --yellow-safety: #E6FF00;
+  --white-off: #F9FAFB;
+  --charcoal-dark: #1C1C1E;
+  --blue-cyan: #00BFFF;
+  --green-success: #22C55E;
+  --red-alert: #EF4444;
+  --gray-placeholder: #9CA3AF;
+
+  /* Utility Colors */
+  --gray-placeholder: #9CA3AF;
+
+  /* Typography */
+  --font-family: 'Inter', system-ui, sans-serif;
+  --font-size-xs: 0.75rem;
+  --font-size-sm: 0.875rem;
+  --font-size-base: 1rem;
+  --font-size-lg: 1.125rem;
+  --font-size-xl: 1.25rem;
+  --font-size-2xl: 1.5rem;
+  --font-size-3xl: 1.875rem;
+  --font-size-4xl: 2.25rem;
+  --font-size-5xl: 2.5rem;
+
+  /* Spacing */
+  --spacing-xs: 0.25rem;
+  --spacing-sm: 0.5rem;
+  --spacing-md: 0.75rem;
+  --spacing-lg: 1rem;
+  --spacing-xl: 1.5rem;
+  --spacing-2xl: 2rem;
+  --spacing-3xl: 3rem;
+
+  /* Border Radius */
+  --radius-sm: 0.25rem;
+  --radius-md: 0.5rem;
+  --radius-lg: 1rem;
+  --radius-xl: 1.5rem;
+  --radius-full: 9999px;
+
+  /* Touch Targets */
+  --touch-target: 44px;
+}
