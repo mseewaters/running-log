@@ -84,9 +84,9 @@
       <!-- Register Link -->
       <div class="text-center mt-4">
         <span class="register-text">Don't have an account? </span>
-        <a data-testid="register-link" href="#" class="register-link">
+        <router-link data-testid="register-link" to="/register" class="register-link">
           Register
-        </a>
+        </router-link>
       </div>
     </div>
 
