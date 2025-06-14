@@ -56,6 +56,22 @@ export interface AuthResponse {
   email: string
 }
 
+export interface TargetRequest {
+  target_type: 'monthly' | 'yearly'
+  period: string         // YYYY-MM for monthly, YYYY for yearly
+  distance_km: number    // Target distance in km
+}
+
+export interface TargetResponse {
+  target_id: string
+  user_id: string
+  target_type: 'monthly' | 'yearly'
+  period: string
+  period_display: string // Human readable: "June 2025" or "2025"
+  distance_km: number
+  created_at: string
+}
+
 // API functions
 export const runApi = {
   // Create a new run
@@ -81,6 +97,20 @@ export const authApi = {
   // Register user
   register: async (userData: AuthRequest & { first_name: string; last_name: string }): Promise<AuthResponse> => {
     const response = await api.post('/auth/register', userData)
+    return response.data
+  },
+}
+
+export const targetApi = {
+  // Create a new target
+  createTarget: async (targetData: TargetRequest): Promise<TargetResponse> => {
+    const response = await api.post('/targets', targetData)
+    return response.data
+  },
+
+  // Get all targets for the user
+  getTargets: async (): Promise<TargetResponse[]> => {
+    const response = await api.get('/targets')
     return response.data
   },
 }

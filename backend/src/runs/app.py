@@ -3,8 +3,9 @@ import os
 from fastapi import FastAPI, HTTPException, Depends, Header
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.security import HTTPBearer, HTTPAuthorizationCredentials
-from pydantic import BaseModel, Field, ValidationError
+from pydantic import BaseModel, Field, ValidationError, field_validator
 from typing import List, Optional
+from decimal import Decimal
 from datetime import date
 import uuid
 
@@ -81,6 +82,7 @@ def get_current_user_id(
 
 
 # Pydantic models for API
+# Run API Models
 class RunRequest(BaseModel):
     date: str = Field(..., description="Run date in YYYY-MM-DD format")
     distance_km: float = Field(..., gt=0, description="Distance in kilometers")
@@ -95,6 +97,67 @@ class RunResponse(BaseModel):
     duration: str
     pace: str
     notes: str
+
+
+# Target API Models
+class TargetRequest(BaseModel):
+    """Request model for creating targets"""
+
+    target_type: str = Field(..., description="Type of target: monthly or yearly")
+    period: str = Field(
+        ..., description="Period in YYYY-MM format for monthly, YYYY for yearly"
+    )
+    distance_km: float = Field(..., gt=0, description="Target distance in kilometers")
+
+    @field_validator("target_type")
+    @classmethod
+    def validate_target_type(cls, v):
+        valid_types = ["monthly", "yearly"]
+        if v not in valid_types:
+            raise ValueError(f"Invalid target type. Must be one of: {valid_types}")
+        return v
+
+    @field_validator("period")
+    @classmethod
+    def validate_period(cls, v, info):
+        """Validate period format based on target_type"""
+        target_type = info.data.get("target_type")
+
+        if target_type == "monthly":
+            # Format should be YYYY-MM
+            import re
+
+            if not re.match(r"^\d{4}-\d{2}$", v):
+                raise ValueError("Invalid monthly period format: must be YYYY-MM")
+
+            # Validate month is 01-12
+            year, month = v.split("-")
+            if not (1 <= int(month) <= 12):
+                raise ValueError("Invalid month: must be 01-12")
+
+        elif target_type == "yearly":
+            # Format should be YYYY
+            import re
+
+            if not re.match(r"^\d{4}$", v):
+                raise ValueError("Invalid yearly period format: must be YYYY")
+
+        return v
+
+
+class TargetResponse(BaseModel):
+    """Response model for target data"""
+
+    target_id: str
+    user_id: str
+    target_type: str
+    period: str
+    period_display: str
+    distance_km: float
+    created_at: str
+
+    class Config:
+        from_attributes = True
 
 
 # NEW: Authentication API models
@@ -237,6 +300,7 @@ def login_user(login_request: LoginRequest):
         raise HTTPException(status_code=500, detail=f"Login failed: {str(e)}")
 
 
+# Run endpoints
 @app.post("/runs", status_code=201, response_model=RunResponse)
 def create_run(
     run_request: RunRequest, current_user_id: str = Depends(get_current_user_id)
@@ -300,3 +364,82 @@ def lambda_handler(event, context):
     except Exception as e:
         print(f"Handler error: {e}")
         return {"statusCode": 500, "body": f"Handler error: {str(e)}"}
+
+
+# Target API Endpoints
+@app.post("/targets", status_code=201, response_model=TargetResponse)
+def create_target(
+    target_request: TargetRequest, current_user_id: str = Depends(get_current_user_id)
+):
+    """Create a new target for the authenticated user"""
+    try:
+        # Import Target model and DAL
+        try:
+            from models.target import Target
+            from dal.target_dal import save_target
+        except ImportError:
+            from .models.target import Target
+            from .dal.target_dal import save_target
+
+        # Create Target model from request (using real user ID from JWT)
+        target = Target(
+            user_id=current_user_id,
+            target_type=target_request.target_type,
+            period=target_request.period,
+            distance_km=Decimal(str(target_request.distance_km)),
+        )
+
+        # Save to database
+        save_target(target)
+
+        # Return response
+        return TargetResponse(
+            target_id=target.target_id,
+            user_id=target.user_id,
+            target_type=target.target_type,
+            period=target.period,
+            period_display=target.period_display,
+            distance_km=float(target.distance_km),
+            created_at=target.created_at.isoformat(),
+        )
+
+    except ValueError as e:
+        raise HTTPException(status_code=422, detail=str(e))
+    except Exception as e:
+        print(f"Target creation error: {e}")  # Debug
+        raise HTTPException(status_code=500, detail=f"Target creation failed: {str(e)}")
+
+
+@app.get("/targets", response_model=List[TargetResponse])
+def get_targets(current_user_id: str = Depends(get_current_user_id)):
+    """Get all targets for the authenticated user"""
+    try:
+        # Import Target DAL
+        try:
+            from dal.target_dal import get_targets_by_user
+        except ImportError:
+            from .dal.target_dal import get_targets_by_user
+
+        # Get targets from database
+        targets = get_targets_by_user(current_user_id)
+
+        # Convert to response models
+        target_responses = []
+        for target in targets:
+            target_responses.append(
+                TargetResponse(
+                    target_id=target.target_id,
+                    user_id=target.user_id,
+                    target_type=target.target_type,
+                    period=target.period,
+                    period_display=target.period_display,
+                    distance_km=float(target.distance_km),
+                    created_at=target.created_at.isoformat(),
+                )
+            )
+
+        return target_responses
+
+    except Exception as e:
+        print(f"Get targets error: {e}")  # Debug
+        raise HTTPException(status_code=500, detail=f"Failed to get targets: {str(e)}")

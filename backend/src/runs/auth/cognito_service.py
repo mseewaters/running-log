@@ -68,11 +68,11 @@ class CognitoService:
                     {"Name": "family_name", "Value": user_data.get("last_name", "")},
                     {
                         "Name": "email_verified",
-                        "Value": "true",  # Auto-verify for testing
+                        "Value": "true",  # Auto-verify
                     },
                 ],
                 TemporaryPassword=password,
-                MessageAction="SUPPRESS",  # Don't send welcome email in tests
+                MessageAction="SUPPRESS",  # Don't send welcome email
             )
 
             # Set permanent password (bypass temporary password requirement)

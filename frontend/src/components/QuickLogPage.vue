@@ -115,9 +115,57 @@
           </div>
         </div>
 
-        <div class="progress-placeholder">
-          <p class="progress-note">Progress tracking coming soon!</p>
-          <p class="progress-note">Connect targets to see monthly and yearly progress.</p>
+        <!-- Target Progress Section -->
+        <div class="progress-section">
+          <!-- Monthly Progress -->
+          <div v-if="currentMonthTarget" class="progress-item">
+            <h4 class="progress-title">{{ new Date().toLocaleDateString('en-US', { month: 'long' }) }} Progress</h4>
+            <div class="progress-details">
+              <div class="progress-stats">
+                <span class="current-distance">{{ calculateProgress(currentMonthTarget, savedRunData.distance_km)?.current || 0 }}km</span>
+                <span class="progress-separator">of</span>
+                <span class="target-distance">{{ currentMonthTarget.distance_km }}km</span>
+              </div>
+              <div class="progress-bar">
+                <div
+                  class="progress-fill"
+                  :style="{ width: `${calculateProgress(currentMonthTarget, savedRunData.distance_km)?.percentage || 0}%` }"
+                ></div>
+              </div>
+              <div class="progress-percentage">
+                {{ calculateProgress(currentMonthTarget, savedRunData.distance_km)?.percentage || 0 }}% complete
+              </div>
+            </div>
+          </div>
+
+          <!-- Yearly Progress -->
+          <div v-if="currentYearTarget" class="progress-item">
+            <h4 class="progress-title">{{ currentYear }} Progress</h4>
+            <div class="progress-details">
+              <div class="progress-stats">
+                <span class="current-distance">{{ calculateProgress(currentYearTarget, savedRunData.distance_km)?.current || 0 }}km</span>
+                <span class="progress-separator">of</span>
+                <span class="target-distance">{{ currentYearTarget.distance_km }}km</span>
+              </div>
+              <div class="progress-bar">
+                <div
+                  class="progress-fill"
+                  :style="{ width: `${calculateProgress(currentYearTarget, savedRunData.distance_km)?.percentage || 0}%` }"
+                ></div>
+              </div>
+              <div class="progress-percentage">
+                {{ calculateProgress(currentYearTarget, savedRunData.distance_km)?.percentage || 0 }}% complete
+              </div>
+            </div>
+          </div>
+
+          <!-- No targets message -->
+          <div v-if="!currentMonthTarget && !currentYearTarget" class="no-targets">
+            <p class="progress-note">No targets set for this period.</p>
+            <p class="progress-note">
+              <router-link to="/plan" class="target-link">Set targets</router-link> to track your progress!
+            </p>
+          </div>
         </div>
 
         <!-- Button to log another run -->
@@ -134,19 +182,34 @@
 </template>
 
 <script setup lang="ts">
-import { ref } from 'vue'
+import { ref, computed } from 'vue'
 import BottomNavigation from './BottomNavigation.vue'
-import { runApi, type RunRequest } from '@/services/api'
+import { runApi, targetApi, type RunRequest, type TargetResponse } from '@/services/api'
 
 const isLoading = ref(false)
 const showSuccess = ref(false)
 const savedRunData = ref<any>(null)
+const targets = ref<TargetResponse[]>([])
 
 // Validation errors
 const errors = ref({
   distance: '',
   time: '',
   general: ''
+})
+
+// Get current year and month
+const currentYear = new Date().getFullYear()
+const currentMonth = new Date().getMonth() + 1 // getMonth() returns 0-11
+const currentMonthKey = `${currentYear}-${currentMonth.toString().padStart(2, '0')}`
+
+// Computed: Current month and year targets
+const currentMonthTarget = computed(() => {
+  return targets.value.find(t => t.target_type === 'monthly' && t.period === currentMonthKey)
+})
+
+const currentYearTarget = computed(() => {
+  return targets.value.find(t => t.target_type === 'yearly' && t.period === currentYear.toString())
 })
 
 // Get today's date in YYYY-MM-DD format
@@ -173,6 +236,50 @@ const formData = ref({
   runType: 'easy' // Default to easy instead of blank
 })
 
+// Load targets when component mounts or after saving a run
+const loadTargets = async () => {
+  try {
+    targets.value = await targetApi.getTargets()
+  } catch (error) {
+    console.error('Failed to load targets:', error)
+  }
+}
+
+// Calculate progress helper function
+const calculateProgress = (target: TargetResponse | undefined, currentDistance: number) => {
+  if (!target) return null
+
+  const percentage = Math.round((currentDistance / target.distance_km) * 100)
+  return {
+    current: currentDistance,
+    target: target.distance_km,
+    percentage: Math.min(percentage, 100), // Cap at 100%
+    remaining: Math.max(target.distance_km - currentDistance, 0)
+  }
+}
+
+// Convert user input to strict HH:MM:SS format for backend
+const formatTimeForAPI = (timeInput: string): string => {
+  // If already in HH:MM:SS format, return as-is
+  if (/^\d{2}:\d{2}:\d{2}$/.test(timeInput)) {
+    return timeInput
+  }
+
+  // If in H:MM:SS format, pad the hour with zero
+  if (/^\d{1}:\d{2}:\d{2}$/.test(timeInput)) {
+    return `0${timeInput}`
+  }
+
+  // If in MM:SS format, add hours as 00:
+  if (/^\d{1,2}:\d{2}$/.test(timeInput)) {
+    const [minutes, seconds] = timeInput.split(':')
+    return `00:${minutes.padStart(2, '0')}:${seconds}`
+  }
+
+  // Fallback - return as-is (will fail backend validation)
+  return timeInput
+}
+
 // Validation functions
 const validateForm = () => {
   errors.value = { distance: '', time: '', general: '' }
@@ -184,14 +291,15 @@ const validateForm = () => {
     isValid = false
   }
 
-  // Validate time format (H:MM:SS or MM:SS)
+  // Validate time format (flexible: MM:SS or H:MM:SS)
   if (!formData.value.time) {
     errors.value.time = 'Time is required'
     isValid = false
   } else {
-    const timeRegex = /^(\d{1,2}:)?[0-5]?\d:[0-5]\d$/
+    // Allow MM:SS or H:MM:SS or HH:MM:SS
+    const timeRegex = /^(\d{1,2}:)?\d{1,2}:\d{2}$/
     if (!timeRegex.test(formData.value.time)) {
-      errors.value.time = 'Time must be in H:MM:SS format'
+      errors.value.time = 'Time must be in MM:SS or H:MM:SS format'
       isValid = false
     }
   }
@@ -199,78 +307,41 @@ const validateForm = () => {
   return isValid
 }
 
-// Convert time format to HH:MM:SS for API
-const formatTimeForAPI = (timeInput: string): string => {
-  // If already in proper HH:MM:SS format, return as-is
-  if (/^\d{2}:\d{2}:\d{2}$/.test(timeInput)) {
-    return timeInput
-  }
-
-  // If in H:MM:SS format, pad the hour
-  if (/^\d{1}:\d{2}:\d{2}$/.test(timeInput)) {
-    return `0${timeInput}`
-  }
-
-  // If in MM:SS format, prepend 00:
-  if (/^\d{1,2}:\d{2}$/.test(timeInput)) {
-    const parts = timeInput.split(':')
-    const minutes = parts[0].padStart(2, '0')
-    const seconds = parts[1]
-    return `00:${minutes}:${seconds}`
-  }
-
-  // If in M:SS format, pad both
-  if (/^\d{1}:\d{2}$/.test(timeInput)) {
-    const parts = timeInput.split(':')
-    const minutes = parts[0].padStart(2, '0')
-    const seconds = parts[1]
-    return `00:${minutes}:${seconds}`
-  }
-
-  // Default fallback - assume it's minutes:seconds and pad
-  const parts = timeInput.split(':')
-  if (parts.length === 2) {
-    const minutes = parts[0].padStart(2, '0')
-    const seconds = parts[1].padStart(2, '0')
-    return `00:${minutes}:${seconds}`
-  }
-
-  // Last resort - return as-is and let backend validation catch it
-  return timeInput
-}
-
+// Form submission
 const handleSubmit = async () => {
-  // Validate form first
   if (!validateForm()) {
     return
   }
 
   isLoading.value = true
+  errors.value.general = ''
 
   try {
-    // Prepare data for API
+    // Format the run data with proper time format for backend
     const runData: RunRequest = {
       date: formData.value.date,
       distance_km: parseFloat(formData.value.distance),
-      duration: formatTimeForAPI(formData.value.time),
-      notes: `Run type: ${formData.value.runType}`
+      duration: formatTimeForAPI(formData.value.time), // Convert to HH:MM:SS
+      notes: `${formData.value.runType} run`
     }
 
-    // Call the real API!
-    const savedRun = await runApi.createRun(runData)
+    // Save the run
+    const response = await runApi.createRun(runData)
 
-    console.log('Run saved successfully:', savedRun)
-    savedRunData.value = savedRun
+    // Store the response for display
+    savedRunData.value = response
+
+    // Load targets to show progress
+    await loadTargets()
+
+    // Show success message
     showSuccess.value = true
 
   } catch (error: any) {
-    console.error('Error saving run:', error)
+    console.error('Run save failed:', error)
 
-    // Handle different types of errors
-    if (error.response?.status === 401) {
-      errors.value.general = 'Please log in again to save your run'
-    } else if (error.response?.status === 422) {
-      errors.value.general = 'Invalid data format. Please check your inputs.'
+    if (error.response?.status === 422) {
+      errors.value.general = 'Please check your inputs.'
     } else if (error.response?.status >= 500) {
       errors.value.general = 'Server error. Please try again later.'
     } else {
@@ -284,6 +355,7 @@ const handleSubmit = async () => {
 const resetForm = () => {
   showSuccess.value = false
   savedRunData.value = null
+  targets.value = []
   errors.value = { distance: '', time: '', general: '' }
   formData.value = {
     date: getTodaysDate(),
@@ -472,17 +544,93 @@ const resetForm = () => {
   margin-top: 0.75rem;
 }
 
-.progress-placeholder {
-  text-align: center;
-  padding: 1rem;
-  background-color: rgba(255, 255, 255, 0.05);
-  border-radius: 0.5rem;
+/* Progress Section Styles */
+.progress-section {
   margin-bottom: 1rem;
 }
 
-.progress-note {
+.progress-item {
+  background-color: var(--charcoal-dark);
+  border-radius: 0.5rem;
+  padding: 1rem;
+  margin-bottom: 1rem;
+}
+
+.progress-item:last-child {
+  margin-bottom: 0;
+}
+
+.progress-title {
+  color: var(--white-off);
+  font-size: 1rem;
+  font-weight: 600;
+  margin-bottom: 0.75rem;
+  text-align: center;
+}
+
+.progress-details {
+  text-align: center;
+}
+
+.progress-stats {
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  gap: 0.5rem;
+  margin-bottom: 0.75rem;
+}
+
+.current-distance {
+  color: var(--yellow-safety);
+  font-weight: 600;
+  font-size: 1.1rem;
+}
+
+.progress-separator {
+  color: var(--gray-cool);
+  font-size: 0.9rem;
+}
+
+.target-distance {
+  color: var(--white-off);
+  font-weight: 500;
+  font-size: 1.1rem;
+}
+
+.progress-bar {
+  background-color: var(--charcoal-medium);
+  height: 8px;
+  border-radius: 4px;
+  overflow: hidden;
+  margin-bottom: 0.5rem;
+}
+
+.progress-fill {
+  background-color: var(--yellow-safety);
+  height: 100%;
+  border-radius: 4px;
+  transition: width 0.3s ease;
+}
+
+.progress-percentage {
   color: var(--gray-cool);
   font-size: 0.875rem;
-  margin-bottom: 0.25rem;
+}
+
+.no-targets {
+  text-align: center;
+  padding: 1rem;
+  background-color: var(--charcoal-dark);
+  border-radius: 0.5rem;
+}
+
+.target-link {
+  color: var(--blue-cyan);
+  text-decoration: none;
+  font-weight: 500;
+}
+
+.target-link:hover {
+  text-decoration: underline;
 }
 </style>
