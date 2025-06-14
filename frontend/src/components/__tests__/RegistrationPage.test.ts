@@ -47,8 +47,12 @@ describe('RegistrationPage', () => {
       }
     })
 
-    // Try to submit empty form
-    await wrapper.find('[data-testid="register-button"]').trigger('click')
+    // Trigger form submission (this should call handleRegistration)
+    const form = wrapper.find('[data-testid="registration-form"]')
+    await form.trigger('submit')
+
+    // Wait for Vue to update the DOM
+    await wrapper.vm.$nextTick()
 
     // Should show validation errors
     expect(wrapper.find('[data-testid="first-name-error"]').exists()).toBe(true)
@@ -71,9 +75,17 @@ describe('RegistrationPage', () => {
     await wrapper.find('[data-testid="password-input"]').setValue('Password123!')
     await wrapper.find('[data-testid="confirm-password-input"]').setValue('DifferentPassword123!')
 
-    await wrapper.find('[data-testid="register-button"]').trigger('click')
+    // Trigger form submission
+    const form = wrapper.find('[data-testid="registration-form"]')
+    await form.trigger('submit')
 
-    expect(wrapper.find('[data-testid="confirm-password-error"]').text()).toContain('Passwords do not match')
+    // Wait for Vue to update the DOM
+    await wrapper.vm.$nextTick()
+
+    // Check that the error element exists and has correct text
+    const errorElement = wrapper.find('[data-testid="confirm-password-error"]')
+    expect(errorElement.exists()).toBe(true)
+    expect(errorElement.text()).toContain('Passwords do not match')
   })
 
   // Test 4: Successful registration
@@ -100,7 +112,15 @@ describe('RegistrationPage', () => {
     await wrapper.find('[data-testid="password-input"]').setValue('Password123!')
     await wrapper.find('[data-testid="confirm-password-input"]').setValue('Password123!')
 
-    await wrapper.find('[data-testid="register-button"]').trigger('click')
+    // Trigger form submission
+    const form = wrapper.find('[data-testid="registration-form"]')
+    await form.trigger('submit')
+
+    // Wait for async operations to complete
+    await wrapper.vm.$nextTick()
+
+    // Give more time for the async call to complete
+    await new Promise(resolve => setTimeout(resolve, 100))
 
     // Should call the API with correct data
     expect(authApi.register).toHaveBeenCalledWith({
@@ -129,10 +149,20 @@ describe('RegistrationPage', () => {
     await wrapper.find('[data-testid="password-input"]').setValue('Password123!')
     await wrapper.find('[data-testid="confirm-password-input"]').setValue('Password123!')
 
-    await wrapper.find('[data-testid="register-button"]').trigger('click')
+    // Trigger form submission
+    const form = wrapper.find('[data-testid="registration-form"]')
+    await form.trigger('submit')
+
+    // Wait for async operations to complete
+    await wrapper.vm.$nextTick()
+
+    // Give more time for the async error handling
+    await new Promise(resolve => setTimeout(resolve, 100))
+
+    // Wait for DOM update after error
+    await wrapper.vm.$nextTick()
 
     // Should show error message
-    await wrapper.vm.$nextTick()
     expect(wrapper.find('[data-testid="general-error"]').exists()).toBe(true)
   })
 
