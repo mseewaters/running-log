@@ -118,43 +118,43 @@
         <!-- Target Progress Section -->
         <div class="progress-section">
           <!-- Monthly Progress -->
-          <div v-if="currentMonthTarget" class="progress-item">
+          <div v-if="currentMonthTarget" class="progress-item" data-testid="monthly-progress">
             <h4 class="progress-title">{{ new Date().toLocaleDateString('en-US', { month: 'long' }) }} Progress</h4>
             <div class="progress-details">
               <div class="progress-stats">
-                <span class="current-distance">{{ calculateProgress(currentMonthTarget, savedRunData.distance_km)?.current || 0 }}km</span>
+                <span class="current-distance">{{ monthlyProgress?.current || 0 }}km</span>
                 <span class="progress-separator">of</span>
                 <span class="target-distance">{{ currentMonthTarget.distance_km }}km</span>
               </div>
               <div class="progress-bar">
                 <div
                   class="progress-fill"
-                  :style="{ width: `${calculateProgress(currentMonthTarget, savedRunData.distance_km)?.percentage || 0}%` }"
+                  :style="{ width: `${monthlyProgress?.percentage || 0}%` }"
                 ></div>
               </div>
               <div class="progress-percentage">
-                {{ calculateProgress(currentMonthTarget, savedRunData.distance_km)?.percentage || 0 }}% complete
+                {{ monthlyProgress?.percentage || 0 }}% complete
               </div>
             </div>
           </div>
 
           <!-- Yearly Progress -->
-          <div v-if="currentYearTarget" class="progress-item">
+          <div v-if="currentYearTarget" class="progress-item" data-testid="yearly-progress">
             <h4 class="progress-title">{{ currentYear }} Progress</h4>
             <div class="progress-details">
               <div class="progress-stats">
-                <span class="current-distance">{{ calculateProgress(currentYearTarget, savedRunData.distance_km)?.current || 0 }}km</span>
+                <span class="current-distance">{{ yearlyProgress?.current || 0 }}km</span>
                 <span class="progress-separator">of</span>
                 <span class="target-distance">{{ currentYearTarget.distance_km }}km</span>
               </div>
               <div class="progress-bar">
                 <div
                   class="progress-fill"
-                  :style="{ width: `${calculateProgress(currentYearTarget, savedRunData.distance_km)?.percentage || 0}%` }"
+                  :style="{ width: `${yearlyProgress?.percentage || 0}%` }"
                 ></div>
               </div>
               <div class="progress-percentage">
-                {{ calculateProgress(currentYearTarget, savedRunData.distance_km)?.percentage || 0 }}% complete
+                {{ yearlyProgress?.percentage || 0 }}% complete
               </div>
             </div>
           </div>
@@ -184,12 +184,15 @@
 <script setup lang="ts">
 import { ref, computed } from 'vue'
 import BottomNavigation from './BottomNavigation.vue'
-import { runApi, targetApi, type RunRequest, type TargetResponse } from '@/services/api'
+import { runApi, targetApi, type RunRequest, type TargetResponse , type RunResponse } from '@/services/api'
+import { calculateMonthlyTotal, calculateYearlyTotal, calculateProgress } from '@/services/progressCalculation'
+
 
 const isLoading = ref(false)
 const showSuccess = ref(false)
 const savedRunData = ref<any>(null)
 const targets = ref<TargetResponse[]>([])
+const allRuns = ref<RunResponse[]>([])
 
 // Validation errors
 const errors = ref({
@@ -211,6 +214,20 @@ const currentMonthTarget = computed(() => {
 const currentYearTarget = computed(() => {
   return targets.value.find(t => t.target_type === 'yearly' && t.period === currentYear.toString())
 })
+
+// Computed: Aggregated progress calculations
+const monthlyProgress = computed(() => {
+  if (!currentMonthTarget.value) return null
+  const monthlyTotal = calculateMonthlyTotal(allRuns.value, currentMonthKey)
+  return calculateProgress(monthlyTotal, currentMonthTarget.value)
+})
+
+const yearlyProgress = computed(() => {
+  if (!currentYearTarget.value) return null
+  const yearlyTotal = calculateYearlyTotal(allRuns.value, currentYear.toString())
+  return calculateProgress(yearlyTotal, currentYearTarget.value)
+})
+
 
 // Get today's date in YYYY-MM-DD format
 const getTodaysDate = () => {
@@ -236,25 +253,21 @@ const formData = ref({
   runType: 'easy' // Default to easy instead of blank
 })
 
+// Load all runs for progress calculation
+const loadAllRuns = async () => {
+  try {
+    allRuns.value = await runApi.getRuns()
+  } catch (error) {
+    console.error('Failed to load runs:', error)
+  }
+}
+
 // Load targets when component mounts or after saving a run
 const loadTargets = async () => {
   try {
     targets.value = await targetApi.getTargets()
   } catch (error) {
     console.error('Failed to load targets:', error)
-  }
-}
-
-// Calculate progress helper function
-const calculateProgress = (target: TargetResponse | undefined, currentDistance: number) => {
-  if (!target) return null
-
-  const percentage = Math.round((currentDistance / target.distance_km) * 100)
-  return {
-    current: currentDistance,
-    target: target.distance_km,
-    percentage: Math.min(percentage, 100), // Cap at 100%
-    remaining: Math.max(target.distance_km - currentDistance, 0)
   }
 }
 
@@ -333,6 +346,8 @@ const handleSubmit = async () => {
 
     // Load targets to show progress
     await loadTargets()
+    // Reload all runs to get updated totals for progress calculation
+    await loadAllRuns()
 
     // Show success message
     showSuccess.value = true
