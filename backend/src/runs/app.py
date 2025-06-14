@@ -39,6 +39,9 @@ app.add_middleware(
     allow_origins=[
         "http://localhost:5173",
         "http://localhost:3000",
+        "https://main.d2ku093eyfpjks.amplifyapp.com/",
+        "https://finish-lines.net",
+        "https://www.finish-lines.net",
     ],  # Your frontend URLs
     allow_credentials=True,
     allow_methods=["*"],
