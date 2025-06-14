@@ -48,8 +48,8 @@
             <input
               data-testid="distance-input"
               type="number"
-              step="0.1"
-              placeholder="5.0"
+              step="0.01"
+              placeholder="5.00"
               class="form-input distance-input"
               :class="{ 'input-error': errors.distance }"
               v-model="formData.distance"

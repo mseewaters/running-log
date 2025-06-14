@@ -215,4 +215,54 @@ describe('QuickLogPage Progress Calculation', () => {
     expect(monthlyProgress.text()).toContain('50km')
     expect(monthlyProgress.text()).toContain('10%')
   })
+
+  it('should accept and display distances with 2 decimal places', async () => {
+    // ARRANGE
+    const mockTargets: any[] = []
+    const mockNewRun = {
+      run_id: '1',
+      date: '2025-06-14',
+      distance_km: 5.25, // Two decimal places
+      duration: '00:30:00',
+      pace: '05:42',
+      notes: ''
+    }
+
+    vi.mocked(api.targetApi.getTargets).mockResolvedValue(mockTargets)
+    vi.mocked(api.runApi.createRun).mockResolvedValue(mockNewRun)
+    vi.mocked(api.runApi.getRuns).mockResolvedValue([mockNewRun])
+
+    const wrapper = mount(QuickLogPage, {
+      global: {
+        plugins: [mockRouter]
+      }
+    })
+
+    await wrapper.vm.$nextTick()
+
+    // ACT - Enter distance with 2 decimal places
+    const distanceInput = wrapper.find('[data-testid="distance-input"]')
+    await distanceInput.setValue('5.25')
+    await wrapper.find('[data-testid="time-input"]').setValue('30:00')
+
+    // ASSERT - Input should accept the decimal value
+    expect(distanceInput.element.value).toBe('5.25')
+
+    // ACT - Submit form
+    const form = wrapper.find('[data-testid="quick-log-form"]')
+    await form.trigger('submit')
+    await wrapper.vm.$nextTick()
+
+    // Wait for async operations
+    await new Promise(resolve => setTimeout(resolve, 100))
+    await wrapper.vm.$nextTick()
+
+    // ASSERT - Should show success with precise distance
+    const successMessage = wrapper.find('.success-message')
+    expect(successMessage.exists()).toBe(true)
+    expect(successMessage.text()).toContain('5.25 km')
+  })
+
 })
+
+

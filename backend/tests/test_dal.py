@@ -189,6 +189,80 @@ class TestRunDAL:
         runs = get_runs_by_user(user_id)
         assert len(runs) == 2
 
+    def test_save_and_retrieve_run_with_decimal_precision(self, dynamodb_tables):
+        """Test that decimal precision is preserved in database operations"""
+        # ARRANGE - Create run with 2 decimal places
+        run = Run(
+            user_id="test-user-123",
+            date=date(2024, 1, 15),
+            distance_km=Decimal("5.25"),  # Exact 2 decimal places
+            duration="00:30:15",
+            notes="Precise distance tracking",
+        )
+
+        # ACT - Save to database
+        save_run(run)  # save_run doesn't return anything
+        saved_run_id = run.run_id  # Get the ID from the run object
+
+        # ACT - Retrieve runs from database
+        retrieved_runs = get_runs_by_user("test-user-123")
+
+        # ASSERT - Distance precision is maintained
+        assert len(retrieved_runs) == 1
+        retrieved_run = retrieved_runs[0]
+
+        # Check that decimal precision is exactly maintained
+        assert retrieved_run.distance_km == Decimal("5.25")
+        assert float(retrieved_run.distance_km) == 5.25
+
+        # Verify other data is correct
+        assert retrieved_run.run_id == saved_run_id
+        assert retrieved_run.date == date(2024, 1, 15)
+        assert retrieved_run.duration_seconds == 1815  # 30:15 in seconds
+        assert retrieved_run.notes == "Precise distance tracking"
+
+    def test_multiple_decimal_precisions_in_database(self, dynamodb_tables):
+        """Test various decimal precision scenarios in database"""
+        # ARRANGE - Create runs with different decimal precision
+        test_distances = [
+            Decimal("5.0"),  # One decimal (but stored as .0)
+            Decimal("5.1"),  # One decimal
+            Decimal("5.12"),  # Two decimals
+            Decimal("10.25"),  # Two decimals
+            Decimal("0.50"),  # Two decimals, leading zero
+        ]
+
+        runs = []
+        for i, distance in enumerate(test_distances):
+            run = Run(
+                user_id="test-user-123",
+                date=date(2024, 1, 15 + i),  # Different dates
+                distance_km=distance,
+                duration="00:30:00",
+                notes=f"Test distance: {distance}",
+            )
+            runs.append(run)
+
+        # ACT - Save all runs
+        for run in runs:
+            save_run(run)  # save_run doesn't return anything
+
+        # ACT - Retrieve all runs
+        retrieved_runs = get_runs_by_user("test-user-123")
+
+        # ASSERT - All distances maintain precision
+        assert len(retrieved_runs) == len(test_distances)
+
+        # Sort by date to match original order
+        retrieved_runs.sort(key=lambda r: r.date)
+
+        for i, (original_distance, retrieved_run) in enumerate(
+            zip(test_distances, retrieved_runs)
+        ):
+            assert retrieved_run.distance_km == original_distance
+            assert float(retrieved_run.distance_km) == float(original_distance)
+            assert retrieved_run.notes == f"Test distance: {original_distance}"
+
 
 class TestTargetDAL:
     def test_save_and_get_target(self, dynamodb_tables):

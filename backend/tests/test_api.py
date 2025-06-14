@@ -199,3 +199,95 @@ class TestEnhancedRunsAPI:
 
         # Assert
         assert response.status_code == 422  # Unprocessable Entity
+
+    def test_post_run_accepts_two_decimal_precision_distance(
+        self, client, mock_dynamodb, auth_headers
+    ):
+        """Test POST /runs accepts distance with 2 decimal places precision"""
+        # Import app AFTER environment is set
+        from src.runs.app import app
+
+        client = TestClient(app)
+
+        # Arrange - Distance with 2 decimal places
+        run_data = {
+            "date": "2024-01-15",
+            "distance_km": 5.25,  # Two decimal places
+            "duration": "00:25:30",
+            "notes": "Precise distance tracking",
+        }
+
+        # Act - Include authentication headers
+        response = client.post("/runs", json=run_data, headers=auth_headers)
+
+        # Debug: Print response details if it fails
+        if response.status_code != 201:
+            print(f"Response status: {response.status_code}")
+            print(f"Response content: {response.text}")
+
+        # Assert
+        assert response.status_code == 201
+        response_data = response.json()
+
+        # Verify response maintains 2 decimal precision
+        assert response_data["distance_km"] == 5.25
+
+        # Verify data was saved to database with correct precision
+        table = mock_dynamodb.Table("test-runs-enhanced")
+        items = table.scan()["Items"]
+        assert len(items) == 1
+
+        saved_run = items[0]
+        # Convert Decimal to float for comparison and verify precision
+        saved_distance = float(saved_run["distance_km"])
+        assert saved_distance == 5.25
+
+    def test_post_run_handles_maximum_decimal_precision(
+        self, client, mock_dynamodb, auth_headers
+    ):
+        """Test POST /runs handles distances with various decimal precision up to 2 places"""
+        # Import app AFTER environment is set
+        from src.runs.app import app
+
+        client = TestClient(app)
+
+        test_distances = [
+            5.1,  # One decimal
+            5.12,  # Two decimals
+            5.99,  # Maximum two decimals
+            10.00,  # Two decimal zeros
+        ]
+
+        for distance in test_distances:
+            # Arrange
+            run_data = {
+                "date": "2024-01-15",
+                "distance_km": distance,
+                "duration": "00:25:30",
+                "notes": f"Distance test: {distance}",
+            }
+
+            # Act
+            response = client.post("/runs", json=run_data, headers=auth_headers)
+
+            # Assert
+            assert response.status_code == 201
+            response_data = response.json()
+            assert response_data["distance_km"] == distance
+
+            # Clean up for next iteration
+            table = mock_dynamodb.Table("test-runs-enhanced")
+            table.delete()
+            # Recreate table for next test
+            mock_dynamodb.create_table(
+                TableName="test-runs-enhanced",
+                KeySchema=[
+                    {"AttributeName": "user_id", "KeyType": "HASH"},
+                    {"AttributeName": "run_id", "KeyType": "RANGE"},
+                ],
+                AttributeDefinitions=[
+                    {"AttributeName": "user_id", "AttributeType": "S"},
+                    {"AttributeName": "run_id", "AttributeType": "S"},
+                ],
+                BillingMode="PAY_PER_REQUEST",
+            )
