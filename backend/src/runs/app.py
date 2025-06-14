@@ -374,15 +374,15 @@ def lambda_handler(event, context):
 def create_target(
     target_request: TargetRequest, current_user_id: str = Depends(get_current_user_id)
 ):
-    """Create a new target for the authenticated user"""
+    """Create or update a target for the authenticated user"""
     try:
         # Import Target model and DAL
         try:
             from models.target import Target
-            from dal.target_dal import save_target
+            from dal.target_dal import upsert_target  # Changed from save_target
         except ImportError:
             from .models.target import Target
-            from .dal.target_dal import save_target
+            from .dal.target_dal import upsert_target  # Changed from save_target
 
         # Create Target model from request (using real user ID from JWT)
         target = Target(
@@ -392,8 +392,8 @@ def create_target(
             distance_km=Decimal(str(target_request.distance_km)),
         )
 
-        # Save to database
-        save_target(target)
+        # Save or update to database
+        upsert_target(target)  # Changed from save_target(target)
 
         # Return response
         return TargetResponse(
