@@ -95,10 +95,13 @@
 
 <script setup lang="ts">
 import { ref } from 'vue'
-import { authService } from '@/services/authService'
+import { useRouter } from 'vue-router'
+import { authApi } from '@/services/api'
 
 // Import the image
-import runnerImage from '@/assets/runner dark.png'
+import runnerImage from '@/assets/runner.png'
+
+const router = useRouter()
 
 // Reactive state
 const email = ref('')
@@ -136,19 +139,34 @@ const handleLogin = async () => {
 
   try {
     // Call real backend API
-    const response = await authService.login({
+    const response = await authApi.login({
       email: email.value,
       password: password.value
     })
 
     console.log('Login successful:', response)
 
-    // TODO: Redirect to dashboard
-    alert(`Login successful! Welcome ${response.email}`)
+    // Store the JWT token in localStorage
+    localStorage.setItem('access_token', response.access_token)
+    localStorage.setItem('user_email', response.email)
+    localStorage.setItem('user_id', response.user_id)
+
+    // Redirect to home page
+    router.push('/home')
 
   } catch (error: any) {
     console.error('Login failed:', error)
-    errors.value.general = error.message || 'Login failed. Please try again.'
+
+    // Handle different error types
+    if (error.response?.status === 401) {
+      errors.value.general = 'Invalid email or password'
+    } else if (error.response?.status === 400) {
+      errors.value.general = error.response.data?.detail || 'Invalid credentials'
+    } else if (error.response?.status >= 500) {
+      errors.value.general = 'Server error. Please try again later.'
+    } else {
+      errors.value.general = 'Login failed. Please check your credentials.'
+    }
   } finally {
     isLoading.value = false
   }

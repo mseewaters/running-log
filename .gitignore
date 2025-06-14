@@ -38,6 +38,6 @@ htmlcov/
 *.log"
 
 # Project files
-running-app-*.md
-prompt-*.md
+running-app*.md
+prompt*.md
 check_versions.py
