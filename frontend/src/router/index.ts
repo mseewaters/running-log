@@ -5,7 +5,7 @@ import QuickLogPage from '@/components/QuickLogPage.vue'
 import RegistrationPage from '../components/RegistrationPage.vue'
 import TargetSettingPage from '../components/TargetSettingPage.vue'
 import HomePage from '../components/HomePage.vue'
-import AboutView from '../views/AboutView.vue'
+import MetricsPage from '../components/MetricsPage.vue'
 
 
 const router = createRouter({
@@ -39,7 +39,7 @@ const router = createRouter({
     {
       path: '/metrics',
       name: 'metrics',
-      component: AboutView // Placeholder
+      component: MetricsPage
     }
   ]
 })

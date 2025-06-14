@@ -43,7 +43,7 @@ describe('HomePage Progress Display', () => {
       {
         target_id: 'target1',
         user_id: 'user123',
-        target_type: 'monthly',
+        target_type: 'monthly' as const,
         period: '2025-06',
         period_display: 'June 2025',
         distance_km: 100.0,
@@ -88,7 +88,7 @@ describe('HomePage Progress Display', () => {
       {
         target_id: 'target2',
         user_id: 'user123',
-        target_type: 'yearly',
+        target_type: 'yearly' as const,
         period: '2025',
         period_display: '2025',
         distance_km: 1000.0,
@@ -130,7 +130,7 @@ describe('HomePage Progress Display', () => {
       {
         target_id: 'monthly',
         user_id: 'user123',
-        target_type: 'monthly',
+        target_type: 'monthly' as const,
         period: '2025-06',
         period_display: 'June 2025',
         distance_km: 80.0,
@@ -139,7 +139,7 @@ describe('HomePage Progress Display', () => {
       {
         target_id: 'yearly',
         user_id: 'user123',
-        target_type: 'yearly',
+        target_type: 'yearly' as const,
         period: '2025',
         period_display: '2025',
         distance_km: 800.0,
@@ -182,8 +182,8 @@ describe('HomePage Progress Display', () => {
       { run_id: '1', date: '2025-06-01', distance_km: 10.0, duration: '01:00:00', pace: '06:00', notes: 'run' }
     ]
 
-    vi.mocked(api.runApi.getRuns).mockResolvedValue(mockRuns)
-    vi.mocked(api.targetApi.getTargets).mockResolvedValue([])
+    vi.mocked(api.runApi.getRuns).mockResolvedValue(mockRuns as any)
+    vi.mocked(api.targetApi.getTargets).mockResolvedValue([] as api.TargetResponse[])
 
     const wrapper = mount(HomePage, {
       global: {
@@ -204,8 +204,8 @@ describe('HomePage Progress Display', () => {
   it('should handle loading states appropriately', async () => {
     // ARRANGE - Slow API responses
     const slowPromise = new Promise(resolve => setTimeout(() => resolve([]), 1000))
-    vi.mocked(api.runApi.getRuns).mockReturnValue(slowPromise)
-    vi.mocked(api.targetApi.getTargets).mockReturnValue(slowPromise)
+    vi.mocked(api.runApi.getRuns).mockReturnValue(slowPromise as Promise<api.RunResponse[]>)
+    vi.mocked(api.targetApi.getTargets).mockReturnValue(slowPromise as Promise<api.TargetResponse[]>)
 
     const wrapper = mount(HomePage, {
       global: {

@@ -42,7 +42,7 @@ describe('QuickLogPage Progress Calculation', () => {
       {
         target_id: 'target1',
         user_id: 'user123',
-        target_type: 'monthly',
+        target_type: 'monthly' as const,
         period: '2025-06',
         period_display: 'June 2025',
         distance_km: 50.0,
@@ -109,7 +109,7 @@ describe('QuickLogPage Progress Calculation', () => {
       {
         target_id: 'target2',
         user_id: 'user123',
-        target_type: 'yearly',
+        target_type: 'yearly' as const,
         period: '2025',
         period_display: '2025',
         distance_km: 500.0,
@@ -166,7 +166,7 @@ describe('QuickLogPage Progress Calculation', () => {
       {
         target_id: 'target1',
         user_id: 'user123',
-        target_type: 'monthly',
+        target_type: 'monthly' as const,
         period: '2025-06',
         period_display: 'June 2025',
         distance_km: 50.0,

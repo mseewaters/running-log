@@ -92,6 +92,7 @@ describe('RegistrationPage', () => {
   it('handles successful registration', async () => {
     const mockRegisterResponse = {
       access_token: 'mock-token',
+      token_type: 'Bearer',
       user_id: 'mock-user-id',
       email: 'john@example.com'
     }

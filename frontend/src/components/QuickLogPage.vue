@@ -299,7 +299,7 @@ const validateForm = () => {
   let isValid = true
 
   // Validate distance
-  if (!formData.value.distance || formData.value.distance <= 0) {
+  if (!formData.value.distance || Number(formData.value.distance) <= 0) {
     errors.value.distance = 'Distance is required and must be greater than 0'
     isValid = false
   }

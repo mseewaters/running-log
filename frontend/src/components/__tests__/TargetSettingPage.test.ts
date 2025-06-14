@@ -81,7 +81,7 @@ describe('TargetSettingPage', () => {
     const mockTargetResponse = {
       target_id: 'mock-target-id',
       user_id: 'mock-user-id',
-      target_type: 'monthly',
+      target_type: 'monthly' as const,
       period: '2025-06',
       period_display: 'June 2025',
       distance_km: 100,
@@ -110,7 +110,7 @@ describe('TargetSettingPage', () => {
 
     // Should call API with correct data
     expect(targetApi.createTarget).toHaveBeenCalledWith({
-      target_type: 'monthly',
+      target_type: 'monthly' as const,
       period: '2025-06',
       distance_km: 100
     })
@@ -170,7 +170,7 @@ describe('TargetSettingPage', () => {
       {
         target_id: '1',
         user_id: 'test-user',
-        target_type: 'monthly',
+        target_type: 'monthly' as const,
         period: '2025-06',
         period_display: 'June 2025',
         distance_km: 100,
