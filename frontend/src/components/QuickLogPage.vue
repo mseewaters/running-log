@@ -80,16 +80,23 @@
         <!-- Run Type Select -->
         <div class="form-group">
           <label class="form-label">Run type:</label>
-          <select
-            data-testid="run-type-select"
-            class="form-input form-select"
-            v-model="formData.runType"
-          >
-            <option value="easy">Easy</option>
-            <option value="tempo">Tempo</option>
-            <option value="intervals">Intervals</option>
-            <option value="long">Long Run</option>
-          </select>
+          <div class="select-wrapper">
+            <select
+              data-testid="run-type-select"
+              class="form-input form-select"
+              v-model="formData.runType"
+            >
+              <option value="easy">Recovery</option>
+              <option value="tempo">Tempo</option>
+              <option value="interval">Interval</option>
+              <option value="long">Long</option>
+            </select>
+            <div class="select-arrow">
+              <svg width="12" height="8" viewBox="0 0 12 8" fill="none">
+                <path d="M1 1L6 6L11 1" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+              </svg>
+            </div>
+          </div>
         </div>
 
         <!-- Save Button -->
@@ -382,6 +389,72 @@ const resetForm = () => {
 </script>
 
 <style scoped>
+
+/* Mobile form improvements */
+@media (max-width: 768px) {
+  .form-input {
+    font-size: 16px; /* Prevents iOS zoom on input focus */
+    padding: 0.875rem 1rem; /* Slightly larger touch targets */
+    min-height: 48px; /* Accessibility minimum */
+  }
+
+  .distance-input {
+    padding-right: 3.5rem; /* More space for km suffix on mobile */
+  }
+
+  .form-group {
+    margin-bottom: 1.25rem; /* More spacing between fields */
+  }
+}
+
+/* Improved select dropdown styling */
+.select-wrapper {
+  position: relative;
+}
+
+/* Firefox specific fix */
+.form-select::-moz-focus-inner {
+  border: 0;
+}
+
+/* Remove IE arrow */
+.form-select::-ms-expand {
+  display: none;
+}
+
+.select-arrow {
+  position: absolute;
+  right: 0.75rem;
+  top: 50%;
+  transform: translateY(-50%);
+  pointer-events: none;
+  color: var(--charcoal-dark);
+}
+
+/* Better input placeholder styling */
+.form-input::placeholder {
+  color: var(--gray-placeholder);
+  font-style: italic;
+}
+
+/* Ensure consistent mobile button sizing */
+@media (max-width: 768px) {
+  .save-button {
+    min-height: 48px;
+    font-size: 1rem;
+    padding: 1rem;
+  }
+}
+
+.form-select {
+  appearance: none;
+  -webkit-appearance: none;
+  -moz-appearance: none;
+  background-color: var(--white-off);
+  cursor: pointer;
+  padding-right: 2.5rem; /* Space for custom arrow */
+  background-image: none; /* Remove any background arrow */
+}
 .page-container {
   min-height: 100vh;
   background-color: var(--charcoal-dark);

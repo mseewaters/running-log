@@ -64,6 +64,19 @@
   flex-direction: column;
   align-items: center;
   padding: 0.25rem;
+  color: var(--gray-cool) !important; /* Ensure specificity */
+  text-decoration: none !important;
+  transition: color 0.2s ease;
+}
+
+/* Active state - high specificity */
+.nav-item-layout.active {
+  color: var(--yellow-safety) !important;
+}
+
+/* Hover state */
+.nav-item-layout:hover {
+  color: var(--white-off) !important;
 }
 
 .nav-icon {
@@ -82,13 +95,41 @@
   transition: filter 0.2s ease;
 }
 
-/* Active state - convert to --yellow-safety */
-.nav-item.active .nav-icon-svg {
-  filter: brightness(0) saturate(100%) invert(86%) sepia(95%) saturate(1352%) hue-rotate(1deg) brightness(119%) contrast(119%);
+/* Active state - convert to --yellow-safety - higher specificity */
+.nav-item-layout.active .nav-icon-svg {
+  filter: brightness(0) saturate(100%) invert(86%) sepia(95%) saturate(1352%) hue-rotate(1deg) brightness(119%) contrast(119%) !important;
 }
 
 /* Hover state - slightly brighter */
-.nav-item:hover .nav-icon-svg {
+.nav-item-layout:hover .nav-icon-svg {
   filter: brightness(0) saturate(100%) invert(100%) sepia(0%) saturate(0%) hue-rotate(93deg) brightness(103%) contrast(103%);
+}
+
+/* Ensure label text follows the same pattern */
+.nav-label {
+  font-size: 0.75rem;
+  font-weight: 500;
+  text-align: center;
+  color: inherit; /* Inherit from parent nav-item */
+}
+
+/* Mobile-specific overrides */
+@media (max-width: 768px) {
+  .nav-item-layout.active {
+    color: var(--yellow-safety) !important;
+  }
+
+  .nav-item-layout.active .nav-icon-svg {
+    filter: brightness(0) saturate(100%) invert(86%) sepia(95%) saturate(1352%) hue-rotate(1deg) brightness(119%) contrast(119%) !important;
+  }
+
+  .nav-label {
+    font-size: 0.7rem;
+  }
+
+  .nav-icon-svg {
+    width: 18px;
+    height: 18px;
+  }
 }
 </style>

@@ -241,3 +241,53 @@ def test_target_period_display_format(mock_dynamodb, auth_headers):
     response = client.post("/targets", json=yearly_target, headers=auth_headers)
     target = response.json()
     assert target["period_display"] == "2025"
+
+
+def test_create_target_overwrites_existing_target(mock_dynamodb, auth_headers):
+    """Test that creating a target for existing period overwrites the old target"""
+    from src.runs.app import app
+
+    client = TestClient(app)
+
+    # ARRANGE - Create initial target
+    initial_target = {
+        "target_type": "monthly",
+        "period": "2025-06",
+        "distance_km": 100.0,
+    }
+
+    # ACT - Create first target
+    response1 = client.post("/targets", json=initial_target, headers=auth_headers)
+    assert response1.status_code == 201
+    first_target_data = response1.json()
+
+    # ARRANGE - Create updated target for same period
+    updated_target = {
+        "target_type": "monthly",
+        "period": "2025-06",  # Same period
+        "distance_km": 150.0,  # Different distance
+    }
+
+    # ACT - Create second target for same period (should overwrite)
+    response2 = client.post("/targets", json=updated_target, headers=auth_headers)
+    assert response2.status_code == 201
+    second_target_data = response2.json()
+
+    # ASSERT - Should return the updated distance
+    assert second_target_data["distance_km"] == 150.0
+    assert second_target_data["period"] == "2025-06"
+
+    # ASSERT - Get all targets and verify only one exists for this period
+    get_response = client.get("/targets", headers=auth_headers)
+    assert get_response.status_code == 200
+    targets = get_response.json()
+
+    # Filter targets for the test period
+    june_targets = [t for t in targets if t["period"] == "2025-06"]
+
+    # Should only have ONE target for June 2025
+    assert len(june_targets) == 1
+    assert june_targets[0]["distance_km"] == 150.0  # Should be the updated value
+    assert (
+        june_targets[0]["target_id"] != first_target_data["target_id"]
+    )  # Should be different target_id

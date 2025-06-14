@@ -58,3 +58,41 @@ def get_targets_by_user(user_id):
         targets.append(target)
 
     return targets
+
+
+def upsert_target(target):
+    """Save or update a target - overwrites existing target for same user/type/period"""
+    table = _get_table()
+
+    # First, check if a target already exists for this user/type/period
+    existing_targets = get_targets_by_user(target.user_id)
+    existing_target = None
+
+    for existing in existing_targets:
+        if (
+            existing.target_type == target.target_type
+            and existing.period == target.period
+        ):
+            existing_target = existing
+            break
+
+    if existing_target:
+        # Delete the existing target first
+        table.delete_item(
+            Key={
+                "user_id": existing_target.user_id,
+                "target_id": existing_target.target_id,
+            }
+        )
+
+    # Now save the new target (same as save_target)
+    item = {
+        "user_id": target.user_id,
+        "target_id": target.target_id,
+        "target_type": target.target_type,
+        "period": target.period,
+        "distance_km": target.distance_km,
+        "created_at": target.created_at.isoformat(),
+    }
+
+    table.put_item(Item=item)

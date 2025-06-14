@@ -261,8 +261,16 @@ const goToNextMonth = () => {
   font-weight: bold;
 }
 
-.calendar-day.has-run:not(.today) {
+.calendar-day.has-run {
   border-color: var(--yellow-safety);
+  border-width: 2px; /* Make it more prominent */
+}
+
+.calendar-day.today.has-run {
+  background-color: var(--blue-cyan);
+  border-color: var(--yellow-safety);
+  border-width: 2px;
+  /* Keep the blue background but add prominent yellow border */
 }
 
 .day-number {
@@ -289,7 +297,7 @@ const goToNextMonth = () => {
 }
 
 .calendar-day.today .run-indicator {
-  background-color: var(--charcoal-dark);
+  background-color: var(--yellow-safety);
 }
 
 /* Responsive adjustments */
