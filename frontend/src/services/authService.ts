@@ -1,8 +1,17 @@
 // src/services/authService.ts - Frontend service for authentication
 import axios from 'axios'
 
-// Your backend API URL (replace with your actual SAM deploy URL)
-const API_BASE_URL = 'https://wu63s38laa.execute-api.us-east-1.amazonaws.com/Prod'
+// Environment-specific API URLs
+const API_URLS = {
+  dev: 'https://eu8c81l4yf.execute-api.us-east-1.amazonaws.com/Prod',
+  prod: 'https://wu63s38laa.execute-api.us-east-1.amazonaws.com/Prod'
+}
+
+// Switch between dev and prod (change this for testing)
+const ENVIRONMENT = 'dev'  // Change to 'prod' for production
+const API_BASE_URL = API_URLS[ENVIRONMENT]
+
+console.log(`🚀 Running in ${ENVIRONMENT} mode - API: ${API_BASE_URL}`)
 
 export interface LoginRequest {
   email: string

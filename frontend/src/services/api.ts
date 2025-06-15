@@ -1,8 +1,18 @@
 // src/services/api.ts
 import axios from 'axios'
 
-// API configuration - Your deployed AWS API Gateway URL
-const API_BASE_URL = 'https://wu63s38laa.execute-api.us-east-1.amazonaws.com/Prod'
+// Environment-specific API URLs
+const API_URLS = {
+  dev: 'https://eu8c81l4yf.execute-api.us-east-1.amazonaws.com/Prod',
+  prod: 'https://wu63s38laa.execute-api.us-east-1.amazonaws.com/Prod'
+}
+
+// Switch between dev and prod (change this for testing)
+const ENVIRONMENT = 'dev'  // Change to 'prod' for production
+const API_BASE_URL = API_URLS[ENVIRONMENT]
+
+console.log(`🚀 API Service running in ${ENVIRONMENT} mode - API: ${API_BASE_URL}`)
+
 const api = axios.create({
   baseURL: API_BASE_URL,
   headers: {
