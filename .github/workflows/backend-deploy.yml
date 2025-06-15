@@ -2,7 +2,7 @@ name: Backend CI/CD Pipeline
 
 on:
   push:
-    branches: [dev]
+    branches: [dev, main] # Add main branch
     paths:
       - "backend/**"
   pull_request:
@@ -86,7 +86,7 @@ jobs:
     name: Deploy to Production
     needs: test
     runs-on: ubuntu-latest
-    if: github.ref == 'refs/heads/main' && (github.event_name == 'push' || github.event.inputs.environment == 'prod')
+    if: github.ref == 'refs/heads/main' && github.event_name == 'push'
     environment: production # Requires manual approval
 
     steps:
