@@ -1,17 +1,12 @@
 // src/services/authService.ts - Frontend service for authentication
 import axios from 'axios'
 
-// Environment-specific API URLs
-const API_URLS = {
-  dev: 'https://eu8c81l4yf.execute-api.us-east-1.amazonaws.com/Prod',
-  prod: 'https://wu63s38laa.execute-api.us-east-1.amazonaws.com/Prod'
-}
+// Environment-based API URL configuration
+const API_BASE_URL = import.meta.env.VITE_API_BASE_URL || 'https://wyjfrc753a.execute-api.us-east-1.amazonaws.com/Prod'
+const ENVIRONMENT = import.meta.env.VITE_ENVIRONMENT || 'production'
 
-// Switch between dev and prod (change this for testing)
-const ENVIRONMENT = 'dev'  // Change to 'prod' for production
-const API_BASE_URL = API_URLS[ENVIRONMENT]
-
-console.log(`🚀 Running in ${ENVIRONMENT} mode - API: ${API_BASE_URL}`)
+console.log(`🔐 Auth Service running in ${ENVIRONMENT} mode`)
+console.log(`📡 Auth API Base URL: ${API_BASE_URL}`)
 
 export interface LoginRequest {
   email: string

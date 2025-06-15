@@ -1,17 +1,12 @@
 // src/services/api.ts
 import axios from 'axios'
 
-// Environment-specific API URLs
-const API_URLS = {
-  dev: 'https://eu8c81l4yf.execute-api.us-east-1.amazonaws.com/Prod',
-  prod: 'https://wu63s38laa.execute-api.us-east-1.amazonaws.com/Prod'
-}
+// Environment-based API URL configuration
+const API_BASE_URL = import.meta.env.VITE_API_BASE_URL || 'https://wu63s38laa.execute-api.us-east-1.amazonaws.com/Prod'
+const ENVIRONMENT = import.meta.env.VITE_ENVIRONMENT || 'production'
 
-// Switch between dev and prod (change this for testing)
-const ENVIRONMENT = 'dev'  // Change to 'prod' for production
-const API_BASE_URL = API_URLS[ENVIRONMENT]
-
-console.log(`🚀 API Service running in ${ENVIRONMENT} mode - API: ${API_BASE_URL}`)
+console.log(`🚀 API Service running in ${ENVIRONMENT} mode`)
+console.log(`📡 API Base URL: ${API_BASE_URL}`)
 
 const api = axios.create({
   baseURL: API_BASE_URL,
