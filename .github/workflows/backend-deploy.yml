@@ -25,6 +25,10 @@ jobs:
     name: Run Tests
     runs-on: ubuntu-latest
 
+    env:
+      AWS_REGION: us-east-1
+      AWS_DEFAULT_REGION: us-east-1
+
     steps:
       - name: Checkout code
         uses: actions/checkout@v4
