@@ -389,79 +389,13 @@ const resetForm = () => {
 </script>
 
 <style scoped>
-
-/* Mobile form improvements */
-@media (max-width: 768px) {
-  .form-input {
-    font-size: 16px; /* Prevents iOS zoom on input focus */
-    padding: 0.875rem 1rem; /* Slightly larger touch targets */
-    min-height: 48px; /* Accessibility minimum */
-  }
-
-  .distance-input {
-    padding-right: 3.5rem; /* More space for km suffix on mobile */
-  }
-
-  .form-group {
-    margin-bottom: 1.25rem; /* More spacing between fields */
-  }
-}
-
-/* Improved select dropdown styling */
-.select-wrapper {
-  position: relative;
-}
-
-/* Firefox specific fix */
-.form-select::-moz-focus-inner {
-  border: 0;
-}
-
-/* Remove IE arrow */
-.form-select::-ms-expand {
-  display: none;
-}
-
-.select-arrow {
-  position: absolute;
-  right: 0.75rem;
-  top: 50%;
-  transform: translateY(-50%);
-  pointer-events: none;
-  color: var(--charcoal-dark);
-}
-
-/* Better input placeholder styling */
-.form-input::placeholder {
-  color: var(--gray-placeholder);
-  font-style: italic;
-}
-
-/* Ensure consistent mobile button sizing */
-@media (max-width: 768px) {
-  .save-button {
-    min-height: 48px;
-    font-size: 1rem;
-    padding: 1rem;
-  }
-}
-
-.form-select {
-  appearance: none;
-  -webkit-appearance: none;
-  -moz-appearance: none;
-  background-color: var(--white-off);
-  cursor: pointer;
-  padding-right: 2.5rem; /* Space for custom arrow */
-  background-image: none; /* Remove any background arrow */
-}
 .page-container {
   min-height: 100vh;
   background-color: var(--charcoal-dark);
   color: var(--white-off);
 }
 
-/* Reuse header styles from HomePage */
+/* Header styles */
 .app-header {
   background-color: var(--charcoal-dark);
   padding: 0rem 1rem;
@@ -516,6 +450,7 @@ const resetForm = () => {
   margin-bottom: 0.5rem;
 }
 
+/* Form inputs - consolidated and consistent */
 .form-input {
   width: 100%;
   padding: 0.75rem 1rem;
@@ -525,35 +460,79 @@ const resetForm = () => {
   color: var(--charcoal-dark);
   font-size: 1rem;
   min-height: 44px;
-}
-
-.form-select {
-  cursor: pointer;
+  box-sizing: border-box;
+  line-height: 1.25;
+  font-family: inherit;
 }
 
 .form-input::placeholder {
   color: var(--gray-placeholder);
+  font-style: italic;
 }
 
-.input-with-suffix {
-  position: relative;
+/* Date input specific fixes */
+input[type="date"].form-input {
+  -webkit-appearance: none;
+  -moz-appearance: none;
+  appearance: none;
   display: flex;
   align-items: center;
+  height: 44px;
+}
+
+/* Select dropdown styling */
+.select-wrapper {
+  position: relative;
+}
+
+.form-select {
+  appearance: none;
+  -webkit-appearance: none;
+  -moz-appearance: none;
+  background-color: var(--white-off);
+  cursor: pointer;
+  padding-right: 2.5rem;
+  background-image: none;
+}
+
+.form-select::-moz-focus-inner {
+  border: 0;
+}
+
+.form-select::-ms-expand {
+  display: none;
+}
+
+.select-arrow {
+  position: absolute;
+  right: 0.75rem;
+  top: 50%;
+  transform: translateY(-50%);
+  pointer-events: none;
+  color: var(--charcoal-dark);
+}
+
+/* Input with suffix (distance field) */
+.input-with-suffix {
+  position: relative;
 }
 
 .distance-input {
-  padding-right: 2.5rem; /* Space for suffix */
+  padding-right: 2.5rem;
 }
 
 .input-suffix {
   position: absolute;
   right: 1rem;
+  top: 50%;
+  transform: translateY(-50%);
   color: var(--gray-placeholder);
   font-size: 1rem;
   pointer-events: none;
   font-weight: 500;
 }
 
+/* Error states */
 .input-error {
   border: 2px solid var(--red-alert) !important;
 }
@@ -573,6 +552,7 @@ const resetForm = () => {
   text-align: center;
 }
 
+/* Save button */
 .save-button {
   width: 100%;
   background-color: var(--yellow-safety);
@@ -592,6 +572,7 @@ const resetForm = () => {
   cursor: not-allowed;
 }
 
+/* Success message */
 .success-message {
   margin-top: 1.5rem;
   background-color: var(--charcoal-medium);
@@ -632,7 +613,7 @@ const resetForm = () => {
   margin-top: 0.75rem;
 }
 
-/* Progress Section Styles */
+/* Progress Section */
 .progress-section {
   margin-bottom: 1rem;
 }
@@ -720,5 +701,55 @@ const resetForm = () => {
 
 .target-link:hover {
   text-decoration: underline;
+}
+
+/* Mobile optimizations */
+@media (max-width: 768px) {
+  .form-input {
+    font-size: 16px; /* Prevents iOS zoom */
+    padding: 0.875rem 1rem;
+    min-height: 48px;
+    height: 48px; /* Force consistent height */
+  }
+
+  input[type="date"].form-input {
+    height: 48px;
+    padding: 0.875rem 1rem;
+    line-height: normal;
+  }
+
+  /* iOS date picker fixes */
+  input[type="date"].form-input::-webkit-datetime-edit {
+    padding: 0;
+    margin: 0;
+    display: flex;
+    align-items: center;
+    height: 100%;
+  }
+
+  input[type="date"].form-input::-webkit-datetime-edit-fields-wrapper {
+    padding: 0;
+    margin: 0;
+  }
+
+  input[type="date"].form-input::-webkit-calendar-picker-indicator {
+    margin: 0;
+    padding: 0.25rem;
+  }
+
+  .distance-input {
+    padding-right: 3.5rem;
+    height: 48px;
+  }
+
+  .form-group {
+    margin-bottom: 1.25rem;
+  }
+
+  .save-button {
+    min-height: 48px;
+    font-size: 1rem;
+    padding: 1rem;
+  }
 }
 </style>
