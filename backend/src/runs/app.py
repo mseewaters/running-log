@@ -1,3 +1,5 @@
+# Pipeline test - automated dev deployment working! 🚀
+
 # src/runs/app.py
 import os
 from fastapi import FastAPI, HTTPException, Depends, Header
