@@ -34,7 +34,7 @@
             @click="handleDelete"
             class="delete-button"
           >
-            Delete Target
+            Delete
           </button>
         </div>
 
@@ -51,7 +51,7 @@
             @click="handleSave"
             class="save-button"
           >
-            Save Target
+            Save
           </button>
         </div>
       </div>

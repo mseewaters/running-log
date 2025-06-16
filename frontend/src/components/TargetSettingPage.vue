@@ -19,6 +19,7 @@
     <main class="main-content">
       <div class="target-table-container">
         <h2 class="section-title">Click to set or edit your targets</h2>
+        <p v-if="yearlyTarget" class="auto-explanation">Monthly targets calculated from yearly goal</p>
       </div>
 
       <!-- Loading state -->
@@ -41,11 +42,11 @@
           </div>
           <div class="target-cell clickable">
             <span class="target-value yearly-target">
-              {{ yearlyTarget ? `${yearlyTarget.distance_km.toFixed(1)} km` : 'Click to set' }}
+              {{ yearlyTarget ? `${yearlyTarget.distance_km.toFixed(1)} km` : 'Set target' }}
             </span>
           </div>
           <div class="actual-cell">
-            <span class="actual-value">{{ yearlyActual.toFixed(1) }} km</span>
+            <span class="actual-value yearly-actual">{{ yearlyActual.toFixed(1) }} km</span>
           </div>
         </div>
 
@@ -238,9 +239,14 @@ const getMonthlyTargetDisplay = (month: MonthData): string => {
   }
   if (month.isAutoCalculated) {
     const autoTargets = calculateAutoMonthlyTargets()
-    return `Auto: ${autoTargets[month.key].toFixed(1)} km`
+    return `${autoTargets[month.key].toFixed(1)} km`
   }
-  return 'Click to set'
+  return 'Set target'
+}
+
+// Helper: Check if target is auto-calculated for styling
+const isAutoCalculated = (month: MonthData): boolean => {
+  return month.isAutoCalculated
 }
 
 // Modal handlers
@@ -351,21 +357,30 @@ onMounted(async () => {
 }
 
 .main-content {
-  padding: 1.5rem;
+  padding: 1rem;
 }
 
 .target-table-container {
-  max-width: 600px;
+  max-width: 800px;
   margin: 0 auto;
 }
 
 .section-title {
   color: var(--white-off);
-  font-size: 1.125rem;
+  font-size: 1rem;
   font-weight: 500;
-  margin-bottom: 1rem;
+  margin-bottom: 0.1rem;
   text-align: left;
   opacity: 0.9;
+}
+
+.auto-explanation {
+  color: var(--yellow-safety);
+  font-size: 0.75rem;
+  font-style: italic;
+  text-align: left;
+  margin-bottom: 0.5rem;
+  opacity: 0.8;
 }
 
 .loading-message {
@@ -386,11 +401,11 @@ onMounted(async () => {
 
 .table-header {
   display: grid;
-  grid-template-columns: 2fr 2fr 1.5fr;
+  grid-template-columns: 1.5fr 2.5fr 1.5fr;  /* More space for target column */
   align-items: center;
   padding: 0.75rem 1rem;
   background-color: var(--charcoal-dark);
-  border-bottom: 3px solid var(--yellow-safety);
+  border-bottom: 2px solid var(--yellow-safety);
   font-weight: 600;
   font-size: 0.9rem;
   color: var(--white-off);
@@ -412,7 +427,7 @@ onMounted(async () => {
 
 .target-row {
   display: grid;
-  grid-template-columns: 2fr 2fr 1.5fr;
+  grid-template-columns: 1.5fr 2.5fr 1.5fr;  /* Match header proportions */
   align-items: center;
   min-height: 3rem;
   padding: 0.75rem 1rem;
@@ -476,7 +491,7 @@ onMounted(async () => {
 
 .target-cell {
   text-align: center;
-  padding: 0.5rem;
+  padding: 0.1rem;
   border-radius: 0.25rem;
 }
 
@@ -487,7 +502,12 @@ onMounted(async () => {
 
 .yearly-target {
   color: var(--yellow-safety);
-  font-size: 1.1rem;
+  font-size: 0.95rem;
+}
+
+.yearly-actual {
+  color: var(--blue-cyan);
+  font-size: 0.95rem;
 }
 
 .user-target {
@@ -500,17 +520,23 @@ onMounted(async () => {
   opacity: 0.8;
 }
 
+.auto-prefix {
+  font-size: 0.75rem;
+  opacity: 0.7;
+}
+
 .past-target {
   color: var(--gray-cool);
 }
 
 .actual-cell {
   text-align: right;
+  padding: 0rem;
 }
 
 .actual-value {
   color: var(--blue-cyan);
-  font-weight: 600;
+  font-weight: 500;
   font-size: 0.95rem;
 }
 
@@ -583,7 +609,7 @@ onMounted(async () => {
   }
 
   .main-content {
-    padding: 1rem 1.5rem;
+    padding: 1rem 1rem;
   }
 
   .target-table-container {
@@ -592,17 +618,17 @@ onMounted(async () => {
 
   .section-title {
     font-size: 1rem;
-    margin-bottom: 0.75rem;
+    margin-bottom: 0.1rem;
   }
 
   .table-header {
-    grid-template-columns: 2fr 1.5fr 1fr;
+    grid-template-columns: 1.5fr 2fr 1fr;  /* Even more space for target on mobile */
     padding: 0.5rem 0.75rem;
     font-size: 0.8rem;
   }
 
   .target-row {
-    grid-template-columns: 2fr 1.5fr 1fr;
+    grid-template-columns: 1.5fr 2fr 1fr;  /* Match header */
     min-height: 2.5rem;
     padding: 0.5rem 0.75rem;
   }
