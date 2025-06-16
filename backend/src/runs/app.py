@@ -449,3 +449,71 @@ def get_targets(current_user_id: str = Depends(get_current_user_id)):
     except Exception as e:
         print(f"Get targets error: {e}")  # Debug
         raise HTTPException(status_code=500, detail=f"Failed to get targets: {str(e)}")
+
+
+@app.put("/targets/{target_id}", response_model=TargetResponse)
+def update_target(
+    target_id: str,
+    target_request: TargetRequest,
+    current_user_id: str = Depends(get_current_user_id),
+):
+    """Update an existing target for the authenticated user"""
+    try:
+        # Import Target model and DAL
+        try:
+            from models.target import Target
+            from dal.target_dal import get_targets_by_user, upsert_target
+        except ImportError:
+            from .models.target import Target
+            from .dal.target_dal import get_targets_by_user, upsert_target
+
+        # First, verify the target exists and belongs to the current user
+        existing_targets = get_targets_by_user(current_user_id)
+        target_to_update = None
+
+        for target in existing_targets:
+            if target.target_id == target_id:
+                target_to_update = target
+                break
+
+        if not target_to_update:
+            raise HTTPException(
+                status_code=404,
+                detail="Target not found or does not belong to current user",
+            )
+
+        # Create updated Target model from request (keeping the same target_id and user_id)
+        updated_target = Target(
+            user_id=current_user_id,
+            target_type=target_request.target_type,
+            period=target_request.period,
+            distance_km=Decimal(str(target_request.distance_km)),
+        )
+
+        # Override the auto-generated target_id with the existing one
+        updated_target.target_id = target_id
+        # Keep the original created_at timestamp
+        updated_target.created_at = target_to_update.created_at
+
+        # Save updated target to database (upsert will replace the existing one)
+        upsert_target(updated_target)
+
+        # Return response
+        return TargetResponse(
+            target_id=updated_target.target_id,
+            user_id=updated_target.user_id,
+            target_type=updated_target.target_type,
+            period=updated_target.period,
+            period_display=updated_target.period_display,
+            distance_km=float(updated_target.distance_km),
+            created_at=updated_target.created_at.isoformat(),
+        )
+
+    except HTTPException:
+        # Re-raise HTTP exceptions (like 404)
+        raise
+    except ValueError as e:
+        raise HTTPException(status_code=422, detail=str(e))
+    except Exception as e:
+        print(f"Target update error: {e}")  # Debug
+        raise HTTPException(status_code=500, detail=f"Target update failed: {str(e)}")

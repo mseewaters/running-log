@@ -78,7 +78,7 @@
               </svg>
             </button>
           </div>
-          <div v-if="errors.password" class="error-message">
+          <div v-if="errors.password" data-testid="password-error" class="error-message">
             {{ errors.password }}
           </div>
         </div>

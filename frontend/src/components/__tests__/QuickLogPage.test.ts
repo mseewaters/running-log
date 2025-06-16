@@ -1,4 +1,4 @@
-// frontend/src/components/__tests__/QuickLogPageProgress.test.ts
+// frontend/src/components/__tests__/QuickLogPageProgress.test.ts - UPDATED
 import { describe, it, expect, vi, beforeEach } from 'vitest'
 import { mount } from '@vue/test-utils'
 import { createRouter, createWebHistory } from 'vue-router'
@@ -86,7 +86,7 @@ describe('QuickLogPage Progress Calculation', () => {
     await new Promise(resolve => setTimeout(resolve, 100))
     await wrapper.vm.$nextTick()
 
-    // ASSERT - Progress should show aggregated total
+    // ASSERT - Progress should show aggregated total using new ProgressSection component
     // Expected: 5.0 + 3.2 + 8.5 = 16.7km of 50km target = 33%
     const monthlyProgress = wrapper.find('[data-testid="monthly-progress"]')
     expect(monthlyProgress.exists()).toBe(true)
@@ -150,7 +150,7 @@ describe('QuickLogPage Progress Calculation', () => {
     await new Promise(resolve => setTimeout(resolve, 100))
     await wrapper.vm.$nextTick()
 
-    // ASSERT - Progress should show aggregated yearly total
+    // ASSERT - Progress should show aggregated yearly total using new ProgressSection component
     // Expected: 10.0 + 7.5 + 12.3 + 15.2 = 45.0km of 500km target = 9%
     const yearlyProgress = wrapper.find('[data-testid="yearly-progress"]')
     expect(yearlyProgress.exists()).toBe(true)
@@ -207,7 +207,7 @@ describe('QuickLogPage Progress Calculation', () => {
     await new Promise(resolve => setTimeout(resolve, 100))
     await wrapper.vm.$nextTick()
 
-    // ASSERT - Should show just the first run's progress
+    // ASSERT - Should show just the first run's progress using new ProgressSection component
     const monthlyProgress = wrapper.find('[data-testid="monthly-progress"]')
     expect(monthlyProgress.exists()).toBe(true)
 
@@ -262,7 +262,4 @@ describe('QuickLogPage Progress Calculation', () => {
     expect(successMessage.exists()).toBe(true)
     expect(successMessage.text()).toContain('5.25 km')
   })
-
 })
-
-

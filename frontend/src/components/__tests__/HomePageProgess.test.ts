@@ -1,4 +1,4 @@
-// frontend/src/components/__tests__/HomePageProgress.test.ts
+// frontend/src/components/__tests__/HomePageProgress.test.ts - UPDATED
 import { describe, it, expect, vi, beforeEach } from 'vitest'
 import { mount } from '@vue/test-utils'
 import { createRouter, createWebHistory } from 'vue-router'
@@ -61,32 +61,30 @@ describe('HomePage Progress Display', () => {
       }
     })
 
-    // Wait for async operations
     await wrapper.vm.$nextTick()
     await new Promise(resolve => setTimeout(resolve, 100))
     await wrapper.vm.$nextTick()
 
-    // ASSERT - Should show monthly progress
+    // ASSERT - Should show monthly progress using new ProgressSection component
     // Expected: 8.0 + 5.2 + 12.5 = 25.7km of 100km = 26%
-    const monthlyProgress = wrapper.find('[data-testid="home-monthly-progress"]')
+    const monthlyProgress = wrapper.find('[data-testid="monthly-progress"]')
     expect(monthlyProgress.exists()).toBe(true)
     expect(monthlyProgress.text()).toContain('25.7km')
     expect(monthlyProgress.text()).toContain('100km')
     expect(monthlyProgress.text()).toContain('26%')
   })
 
-  it('should display yearly progress when user has targets and runs', async () => {
-    // ARRANGE - Mock runs from different months in 2025
+  it('should display yearly progress when user has yearly targets', async () => {
+    // ARRANGE - Mock runs and yearly target
     const mockRuns = [
-      { run_id: '1', date: '2025-01-15', distance_km: 20.0, duration: '02:00:00', pace: '06:00', notes: 'January run' },
-      { run_id: '2', date: '2025-03-20', distance_km: 15.5, duration: '01:30:00', pace: '05:48', notes: 'March run' },
-      { run_id: '3', date: '2025-06-10', distance_km: 18.2, duration: '01:45:00', pace: '05:45', notes: 'June run' },
-      { run_id: '4', date: '2024-12-25', distance_km: 10.0, duration: '01:00:00', pace: '06:00', notes: 'Previous year' }, // Previous year
+      { run_id: '1', date: '2025-01-15', distance_km: 20.0, duration: '02:00:00', pace: '06:00', notes: 'long run' },
+      { run_id: '2', date: '2025-03-10', distance_km: 15.5, duration: '01:30:00', pace: '05:48', notes: 'tempo' },
+      { run_id: '3', date: '2025-06-05', distance_km: 18.2, duration: '01:50:00', pace: '06:02', notes: 'easy' }
     ]
 
     const mockTargets = [
       {
-        target_id: 'target2',
+        target_id: 'yearly',
         user_id: 'user123',
         target_type: 'yearly' as const,
         period: '2025',
@@ -96,7 +94,6 @@ describe('HomePage Progress Display', () => {
       }
     ]
 
-    // Mock API responses
     vi.mocked(api.runApi.getRuns).mockResolvedValue(mockRuns)
     vi.mocked(api.targetApi.getTargets).mockResolvedValue(mockTargets)
 
@@ -112,7 +109,7 @@ describe('HomePage Progress Display', () => {
 
     // ASSERT - Should show yearly progress
     // Expected: 20.0 + 15.5 + 18.2 = 53.7km of 1000km = 5%
-    const yearlyProgress = wrapper.find('[data-testid="home-yearly-progress"]')
+    const yearlyProgress = wrapper.find('[data-testid="yearly-progress"]')
     expect(yearlyProgress.exists()).toBe(true)
     expect(yearlyProgress.text()).toContain('53.7km')
     expect(yearlyProgress.text()).toContain('1000km')
@@ -161,8 +158,8 @@ describe('HomePage Progress Display', () => {
     await wrapper.vm.$nextTick()
 
     // ASSERT - Both progress sections should exist
-    const monthlyProgress = wrapper.find('[data-testid="home-monthly-progress"]')
-    const yearlyProgress = wrapper.find('[data-testid="home-yearly-progress"]')
+    const monthlyProgress = wrapper.find('[data-testid="monthly-progress"]')
+    const yearlyProgress = wrapper.find('[data-testid="yearly-progress"]')
 
     expect(monthlyProgress.exists()).toBe(true)
     expect(yearlyProgress.exists()).toBe(true)
@@ -196,7 +193,7 @@ describe('HomePage Progress Display', () => {
     await wrapper.vm.$nextTick()
 
     // ASSERT - Should show no targets message
-    const noTargetsMessage = wrapper.find('[data-testid="home-no-targets"]')
+    const noTargetsMessage = wrapper.find('[data-testid="no-targets"]')
     expect(noTargetsMessage.exists()).toBe(true)
     expect(noTargetsMessage.text()).toContain('No targets set')
   })

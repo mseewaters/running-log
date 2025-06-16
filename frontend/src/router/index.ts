@@ -3,7 +3,7 @@ import { createRouter, createWebHistory } from 'vue-router'
 import LandingPage from '../components/LandingPage.vue'
 import QuickLogPage from '@/components/QuickLogPage.vue'
 import RegistrationPage from '../components/RegistrationPage.vue'
-import TargetSettingPage from '../components/TargetSettingPage.vue'
+import TargetSettingPage from '../components/TargetSettingTable.vue'
 import HomePage from '../components/HomePage.vue'
 import MetricsPage from '../components/MetricsPage.vue'
 

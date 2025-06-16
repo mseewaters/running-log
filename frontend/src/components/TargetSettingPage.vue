@@ -299,12 +299,18 @@ const handleTargetCreation = async () => {
     min-height: 48px; /* Accessibility minimum */
   }
 
+  .page-title {
+    font-size: 1rem;
+    margin-bottom: 1rem;
+    margin-top: 0.5rem;
+  }
+
   .distance-input {
     padding-right: 3.5rem; /* More space for km suffix on mobile */
   }
 
   .form-group {
-    margin-bottom: 1.25rem; /* More spacing between fields */
+    margin-bottom: 0.75rem; /* More spacing between fields */
   }
 }
 
@@ -409,22 +415,22 @@ const handleTargetCreation = async () => {
 }
 
 .main-content {
-  padding: 1.5rem;
+  padding: 0.75rem 1.5rem;
 }
 
 .page-title {
   color: var(--white-off);
-  font-size: 1.5rem;
+  font-size: 1rem;
   font-weight: 600;
-  margin-bottom: 1.5rem;
+  margin-bottom: 0.5rem;
 }
 
 .target-setting-form {
-  max-width: 400px;
+  max-width: 800px;
 }
 
 .form-group {
-  margin-bottom: 1rem;
+  margin-bottom: 0.75rem;
 }
 
 .form-label {
@@ -432,7 +438,7 @@ const handleTargetCreation = async () => {
   font-size: 1rem;
   font-weight: 500;
   display: block;
-  margin-bottom: 0.5rem;
+  margin-bottom: 0.1rem;
 }
 
 .form-input {

@@ -1,3 +1,4 @@
+<!-- frontend/src/components/QuickLogPage.vue - UPDATED -->
 <template>
   <div class="page-container">
     <!-- Header matching HomePage -->
@@ -30,6 +31,7 @@
         <div v-if="errors.general" class="error-message general-error">
           {{ errors.general }}
         </div>
+
         <!-- Date Input -->
         <div class="form-group">
           <label class="form-label">Date:</label>
@@ -67,7 +69,7 @@
           <input
             data-testid="time-input"
             type="text"
-            placeholder="H:MM:SS"
+            placeholder="MM:SS or HH:MM:SS"
             class="form-input"
             :class="{ 'input-error': errors.time }"
             v-model="formData.time"
@@ -122,154 +124,162 @@
           </div>
         </div>
 
-        <!-- Target Progress Section -->
-        <div class="progress-section">
-          <!-- Monthly Progress -->
-          <div v-if="currentMonthTarget" class="progress-item" data-testid="monthly-progress">
-            <h4 class="progress-title">{{ new Date().toLocaleDateString('en-US', { month: 'long' }) }} Progress</h4>
-            <div class="progress-details">
-              <div class="progress-stats">
-                <span class="current-distance">{{ monthlyProgress?.current || 0 }}km</span>
-                <span class="progress-separator">of</span>
-                <span class="target-distance">{{ currentMonthTarget.distance_km }}km</span>
-              </div>
-              <div class="progress-bar">
-                <div
-                  class="progress-fill"
-                  :style="{ width: `${monthlyProgress?.percentage || 0}%` }"
-                ></div>
-              </div>
-              <div class="progress-percentage">
-                {{ monthlyProgress?.percentage || 0 }}% complete
-              </div>
-            </div>
-          </div>
+        <!-- Progress Section - Now using reusable component -->
+        <ProgressSection
+          :isLoading="false"
+          :targets="targets"
+          :allRuns="allRuns"
+        />
 
-          <!-- Yearly Progress -->
-          <div v-if="currentYearTarget" class="progress-item" data-testid="yearly-progress">
-            <h4 class="progress-title">{{ currentYear }} Progress</h4>
-            <div class="progress-details">
-              <div class="progress-stats">
-                <span class="current-distance">{{ yearlyProgress?.current || 0 }}km</span>
-                <span class="progress-separator">of</span>
-                <span class="target-distance">{{ currentYearTarget.distance_km }}km</span>
-              </div>
-              <div class="progress-bar">
-                <div
-                  class="progress-fill"
-                  :style="{ width: `${yearlyProgress?.percentage || 0}%` }"
-                ></div>
-              </div>
-              <div class="progress-percentage">
-                {{ yearlyProgress?.percentage || 0 }}% complete
-              </div>
-            </div>
-          </div>
-
-          <!-- No targets message -->
-          <div v-if="!currentMonthTarget && !currentYearTarget" class="no-targets">
-            <p class="progress-note">No targets set for this period.</p>
-            <p class="progress-note">
-              <router-link to="/plan" class="target-link">Set targets</router-link> to track your progress!
-            </p>
-          </div>
+        <!-- Action buttons -->
+        <div class="action-buttons">
+          <button @click="resetForm" class="secondary-button">
+            Log Another Run
+          </button>
         </div>
-
-        <!-- Button to log another run -->
-        <button
-          @click="resetForm"
-          class="save-button"
-          style="margin-top: 1.5rem;"
-        >
-          Log Another Run
-        </button>
       </div>
     </main>
   </div>
 </template>
 
 <script setup lang="ts">
-import { ref, computed } from 'vue'
+import { ref, onMounted } from 'vue'
 import BottomNavigation from './BottomNavigation.vue'
-import { runApi, targetApi, type RunRequest, type TargetResponse , type RunResponse } from '@/services/api'
-import { calculateMonthlyTotal, calculateYearlyTotal, calculateProgress } from '@/services/progressCalculation'
+import ProgressSection from './ProgressSection.vue'
+import { runApi, targetApi, type RunResponse, type TargetResponse } from '@/services/api'
 
-
+// State management
 const isLoading = ref(false)
 const showSuccess = ref(false)
-const savedRunData = ref<any>(null)
+const savedRunData = ref<RunResponse | null>(null)
 const targets = ref<TargetResponse[]>([])
 const allRuns = ref<RunResponse[]>([])
 
-// Validation errors
+// Form data
+const formData = ref({
+  date: getTodaysDate(),
+  distance: '',
+  time: '',
+  runType: 'easy'
+})
+
+// Error handling
 const errors = ref({
   distance: '',
   time: '',
   general: ''
 })
 
-// Get current year and month
-const currentYear = new Date().getFullYear()
-const currentMonth = new Date().getMonth() + 1 // getMonth() returns 0-11
-const currentMonthKey = `${currentYear}-${currentMonth.toString().padStart(2, '0')}`
-
-// Computed: Current month and year targets
-const currentMonthTarget = computed(() => {
-  return targets.value.find(t => t.target_type === 'monthly' && t.period === currentMonthKey)
+// Load initial data
+onMounted(async () => {
+  await loadTargets()
+  await loadAllRuns()
 })
 
-const currentYearTarget = computed(() => {
-  return targets.value.find(t => t.target_type === 'yearly' && t.period === currentYear.toString())
-})
-
-// Computed: Aggregated progress calculations
-const monthlyProgress = computed(() => {
-  if (!currentMonthTarget.value) return null
-  const monthlyTotal = calculateMonthlyTotal(allRuns.value, currentMonthKey)
-  return calculateProgress(monthlyTotal, currentMonthTarget.value)
-})
-
-const yearlyProgress = computed(() => {
-  if (!currentYearTarget.value) return null
-  const yearlyTotal = calculateYearlyTotal(allRuns.value, currentYear.toString())
-  return calculateProgress(yearlyTotal, currentYearTarget.value)
-})
-
-
-// Get today's date in YYYY-MM-DD format
-const getTodaysDate = () => {
+// Utility function to get today's date in YYYY-MM-DD format
+function getTodaysDate(): string {
   const today = new Date()
   return today.toISOString().split('T')[0]
 }
 
 // Format date for display
-const formatDate = (dateString: string) => {
-  const date = new Date(dateString)
+const formatDate = (dateStr: string): string => {
+  const date = new Date(dateStr)
   return date.toLocaleDateString('en-US', {
-    weekday: 'long',
     year: 'numeric',
     month: 'long',
     day: 'numeric'
   })
 }
 
-const formData = ref({
-  date: getTodaysDate(),
-  distance: '',
-  time: '',
-  runType: 'easy' // Default to easy instead of blank
-})
-
-// Load all runs for progress calculation
-const loadAllRuns = async () => {
-  try {
-    allRuns.value = await runApi.getRuns()
-  } catch (error) {
-    console.error('Failed to load runs:', error)
-  }
+// Validation functions
+const validateDistance = (distance: string): string => {
+  if (!distance) return 'Distance is required'
+  const num = parseFloat(distance)
+  if (isNaN(num) || num <= 0) return 'Distance must be a positive number'
+  if (num > 200) return 'Distance seems too high'
+  return ''
 }
 
-// Load targets when component mounts or after saving a run
+// Enhanced time validation that accepts multiple formats
+const validateTime = (time: string): string => {
+  if (!time) return 'Time is required'
+
+  // Remove any whitespace
+  const cleanTime = time.trim()
+
+  // Accept these formats:
+  // MM:SS (e.g., "30:00" = 30 minutes)
+  // H:MM:SS (e.g., "1:30:00" = 1 hour 30 minutes)
+  // HH:MM:SS (e.g., "01:30:00" = 1 hour 30 minutes)
+  const timePatterns = [
+    /^(\d{1,2}):(\d{2})$/, // MM:SS format
+    /^(\d{1,2}):(\d{2}):(\d{2})$/ // H:MM:SS or HH:MM:SS format
+  ]
+
+  let isValidFormat = false
+  let hours = 0, minutes = 0, seconds = 0
+
+  // Check MM:SS format first
+  const mmssMatch = cleanTime.match(timePatterns[0])
+  if (mmssMatch) {
+    minutes = parseInt(mmssMatch[1])
+    seconds = parseInt(mmssMatch[2])
+    isValidFormat = true
+  } else {
+    // Check HH:MM:SS format
+    const hhmmssMatch = cleanTime.match(timePatterns[1])
+    if (hhmmssMatch) {
+      hours = parseInt(hhmmssMatch[1])
+      minutes = parseInt(hhmmssMatch[2])
+      seconds = parseInt(hhmmssMatch[3])
+      isValidFormat = true
+    }
+  }
+
+  if (!isValidFormat) {
+    return 'Time must be in MM:SS or HH:MM:SS format (e.g., "30:00" or "1:30:00")'
+  }
+
+  // Validate ranges
+  if (seconds >= 60) return 'Seconds must be less than 60'
+  if (minutes >= 60) return 'Minutes must be less than 60'
+  if (hours > 12) return 'Hours seems too high for a run'
+
+  // Check for reasonable run times
+  const totalMinutes = hours * 60 + minutes + seconds / 60
+  if (totalMinutes < 1) return 'Run time seems too short'
+  if (totalMinutes > 600) return 'Run time seems too long (over 10 hours)'
+
+  return ''
+}
+
+// Helper function to normalize time to HH:MM:SS format for API
+const normalizeTimeFormat = (time: string): string => {
+  const cleanTime = time.trim()
+
+  // Check if it's MM:SS format
+  const mmssMatch = cleanTime.match(/^(\d{1,2}):(\d{2})$/)
+  if (mmssMatch) {
+    const minutes = mmssMatch[1].padStart(2, '0')
+    const seconds = mmssMatch[2]
+    return `00:${minutes}:${seconds}`
+  }
+
+  // Check if it's H:MM:SS format (need to pad hour)
+  const hmmssMatch = cleanTime.match(/^(\d{1}):(\d{2}):(\d{2})$/)
+  if (hmmssMatch) {
+    const hours = hmmssMatch[1].padStart(2, '0')
+    const minutes = hmmssMatch[2]
+    const seconds = hmmssMatch[3]
+    return `${hours}:${minutes}:${seconds}`
+  }
+
+  // Already in HH:MM:SS format
+  return cleanTime
+}
+
+// Load targets and runs for progress display
 const loadTargets = async () => {
   try {
     targets.value = await targetApi.getTargets()
@@ -278,92 +288,51 @@ const loadTargets = async () => {
   }
 }
 
-// Convert user input to strict HH:MM:SS format for backend
-const formatTimeForAPI = (timeInput: string): string => {
-  // If already in HH:MM:SS format, return as-is
-  if (/^\d{2}:\d{2}:\d{2}$/.test(timeInput)) {
-    return timeInput
+const loadAllRuns = async () => {
+  try {
+    allRuns.value = await runApi.getRuns()
+  } catch (error) {
+    console.error('Failed to load runs:', error)
   }
-
-  // If in H:MM:SS format, pad the hour with zero
-  if (/^\d{1}:\d{2}:\d{2}$/.test(timeInput)) {
-    return `0${timeInput}`
-  }
-
-  // If in MM:SS format, add hours as 00:
-  if (/^\d{1,2}:\d{2}$/.test(timeInput)) {
-    const [minutes, seconds] = timeInput.split(':')
-    return `00:${minutes.padStart(2, '0')}:${seconds}`
-  }
-
-  // Fallback - return as-is (will fail backend validation)
-  return timeInput
-}
-
-// Validation functions
-const validateForm = () => {
-  errors.value = { distance: '', time: '', general: '' }
-  let isValid = true
-
-  // Validate distance
-  if (!formData.value.distance || Number(formData.value.distance) <= 0) {
-    errors.value.distance = 'Distance is required and must be greater than 0'
-    isValid = false
-  }
-
-  // Validate time format (flexible: MM:SS or H:MM:SS)
-  if (!formData.value.time) {
-    errors.value.time = 'Time is required'
-    isValid = false
-  } else {
-    // Allow MM:SS or H:MM:SS or HH:MM:SS
-    const timeRegex = /^(\d{1,2}:)?\d{1,2}:\d{2}$/
-    if (!timeRegex.test(formData.value.time)) {
-      errors.value.time = 'Time must be in MM:SS or H:MM:SS format'
-      isValid = false
-    }
-  }
-
-  return isValid
 }
 
 // Form submission
 const handleSubmit = async () => {
-  if (!validateForm()) {
-    return
-  }
+  // Reset errors
+  errors.value = { distance: '', time: '', general: '' }
 
+  // Validate
+  const distanceError = validateDistance(formData.value.distance)
+  const timeError = validateTime(formData.value.time)
+
+  if (distanceError) errors.value.distance = distanceError
+  if (timeError) errors.value.time = timeError
+
+  if (distanceError || timeError) return
+
+  // Submit
   isLoading.value = true
-  errors.value.general = ''
 
   try {
-    // Format the run data with proper time format for backend
-    const runData: RunRequest = {
+    const runData = {
       date: formData.value.date,
       distance_km: parseFloat(formData.value.distance),
-      duration: formatTimeForAPI(formData.value.time), // Convert to HH:MM:SS
-      notes: `${formData.value.runType} run`
+      duration: normalizeTimeFormat(formData.value.time), // Normalize time format
+      run_type: formData.value.runType,
+      notes: ''
     }
 
-    // Save the run
     const response = await runApi.createRun(runData)
-
-    // Store the response for display
     savedRunData.value = response
-
-    // Load targets to show progress
-    await loadTargets()
-    // Reload all runs to get updated totals for progress calculation
-    await loadAllRuns()
-
-    // Show success message
     showSuccess.value = true
 
-  } catch (error: any) {
-    console.error('Run save failed:', error)
+    // Reload data to show updated progress
+    await Promise.all([loadTargets(), loadAllRuns()])
 
-    if (error.response?.status === 422) {
-      errors.value.general = 'Please check your inputs.'
+  } catch (error: any) {
+    console.error('Failed to save run:', error)
+    if (error.response?.status === 400) {
+      errors.value.general = error.response?.data?.detail || 'Invalid run data. Please check your inputs.'
     } else if (error.response?.status >= 500) {
       errors.value.general = 'Server error. Please try again later.'
     } else {
@@ -378,6 +347,7 @@ const resetForm = () => {
   showSuccess.value = false
   savedRunData.value = null
   targets.value = []
+  allRuns.value = []
   errors.value = { distance: '', time: '', general: '' }
   formData.value = {
     date: getTodaysDate(),
@@ -385,6 +355,9 @@ const resetForm = () => {
     time: '',
     runType: 'easy'
   }
+  // Reload data for next use
+  loadTargets()
+  loadAllRuns()
 }
 </script>
 
@@ -424,22 +397,22 @@ const resetForm = () => {
 }
 
 .main-content {
-  padding: 1.5rem;
+  padding: 0.75rem 1.5rem;
 }
 
 .page-title {
   color: var(--white-off);
-  font-size: 1.5rem;
+  font-size: 1rem;
   font-weight: 600;
-  margin-bottom: 1.5rem;
+  margin-bottom: 0.5rem;
 }
 
 .quick-log-form {
-  max-width: 400px;
+  max-width: 600px;
 }
 
 .form-group {
-  margin-bottom: 1rem;
+  margin-bottom: 0.75rem;
 }
 
 .form-label {
@@ -447,7 +420,7 @@ const resetForm = () => {
   font-size: 1rem;
   font-weight: 500;
   display: block;
-  margin-bottom: 0.5rem;
+  margin-bottom: 0.1rem;
 }
 
 /* Form inputs - consolidated and consistent */
@@ -460,9 +433,6 @@ const resetForm = () => {
   color: var(--charcoal-dark);
   font-size: 1rem;
   min-height: 44px;
-  box-sizing: border-box;
-  line-height: 1.25;
-  font-family: inherit;
 }
 
 .form-input::placeholder {
@@ -471,6 +441,32 @@ const resetForm = () => {
 }
 
 /* Date input specific fixes */
+input[type="date"] {
+  position: relative;
+}
+
+input[type="date"]::-webkit-calendar-picker-indicator {
+  position: absolute;
+  right: var(--spacing-md);
+  top: 50%;
+  transform: translateY(-50%);
+  cursor: pointer;
+  opacity: 0.7;
+}
+
+input[type="date"]::-webkit-calendar-picker-indicator:hover {
+  opacity: 1;
+}
+
+/* Firefox date input */
+input[type="date"]::-moz-calendar-picker-indicator {
+  position: absolute;
+  right: var(--spacing-md);
+  top: 50%;
+  transform: translateY(-50%);
+  cursor: pointer;
+}
+
 input[type="date"].form-input {
   -webkit-appearance: none;
   -moz-appearance: none;
@@ -613,104 +609,56 @@ input[type="date"].form-input {
   margin-top: 0.75rem;
 }
 
-/* Progress Section */
-.progress-section {
-  margin-bottom: 1rem;
-}
-
-.progress-item {
-  background-color: var(--charcoal-dark);
-  border-radius: 0.5rem;
-  padding: 1rem;
-  margin-bottom: 1rem;
-}
-
-.progress-item:last-child {
-  margin-bottom: 0;
-}
-
-.progress-title {
-  color: var(--white-off);
-  font-size: 1rem;
-  font-weight: 600;
-  margin-bottom: 0.75rem;
+/* Action buttons */
+.action-buttons {
+  margin-top: 1rem;
   text-align: center;
 }
 
-.progress-details {
-  text-align: center;
-}
-
-.progress-stats {
-  display: flex;
-  justify-content: center;
-  align-items: center;
-  gap: 0.5rem;
-  margin-bottom: 0.75rem;
-}
-
-.current-distance {
-  color: var(--yellow-safety);
-  font-weight: 600;
-  font-size: 1.1rem;
-}
-
-.progress-separator {
-  color: var(--gray-cool);
-  font-size: 0.9rem;
-}
-
-.target-distance {
-  color: var(--white-off);
-  font-weight: 500;
-  font-size: 1.1rem;
-}
-
-.progress-bar {
-  background-color: var(--charcoal-medium);
-  height: 8px;
-  border-radius: 4px;
-  overflow: hidden;
-  margin-bottom: 0.5rem;
-}
-
-.progress-fill {
+.secondary-button {
   background-color: var(--yellow-safety);
-  height: 100%;
-  border-radius: 4px;
-  transition: width 0.3s ease;
-}
-
-.progress-percentage {
-  color: var(--gray-cool);
-  font-size: 0.875rem;
-}
-
-.no-targets {
-  text-align: center;
-  padding: 1rem;
-  background-color: var(--charcoal-dark);
+  color: var(--charcoal-dark);
+  border: none;
+  padding: 0.75rem 1.5rem;
   border-radius: 0.5rem;
+  font-weight: 600;
+  cursor: pointer;
+  transition: background-color 0.2s;
+  font-size: 1rem;
 }
 
-.target-link {
-  color: var(--blue-cyan);
-  text-decoration: none;
-  font-weight: 500;
-}
-
-.target-link:hover {
-  text-decoration: underline;
+.secondary-button:hover {
+  background-color: rgba(255, 193, 7, 0.9);
 }
 
 /* Mobile optimizations */
 @media (max-width: 768px) {
+  .page-title {
+    font-size: 1rem;
+    margin-bottom: 1rem;
+    margin-top: 0.5rem;
+  }
+
+  .main-content {
+    padding: 1rem 1.5rem;
+  }
+
+  .header-content {
+    height: 3rem;
+  }
+
+  .app-title {
+    font-size: 1.75rem;
+    margin-top: 0.25rem;
+  }
+
   .form-input {
     font-size: 16px; /* Prevents iOS zoom */
     padding: 0.875rem 1rem;
     min-height: 48px;
     height: 48px; /* Force consistent height */
   }
+
 
   input[type="date"].form-input {
     height: 48px;
@@ -743,7 +691,7 @@ input[type="date"].form-input {
   }
 
   .form-group {
-    margin-bottom: 1.25rem;
+    margin-bottom: 0.75rem;
   }
 
   .save-button {

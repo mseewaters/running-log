@@ -118,6 +118,12 @@ export const targetApi = {
     const response = await api.get('/targets')
     return response.data
   },
+
+  // Update an existing target
+  updateTarget: async (targetId: string, targetData: TargetRequest): Promise<TargetResponse> => {
+    const response = await api.put(`/targets/${targetId}`, targetData)
+    return response.data
+  },
 }
 
 export default api

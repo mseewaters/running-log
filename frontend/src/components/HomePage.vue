@@ -1,3 +1,4 @@
+<!-- frontend/src/components/HomePage.vue - UPDATED -->
 <template>
   <div class="page-container">
     <!-- Header matching Figma -->
@@ -17,68 +18,12 @@
 
     <!-- Main content -->
     <main class="main-content">
-      <!-- Progress Section -->
-      <section class="progress-section">
-        <h2 class="section-title">Progress</h2>
-
-        <!-- Loading state -->
-        <div v-if="isLoading" data-testid="progress-loading" class="loading-message">
-          Loading your progress...
-        </div>
-
-        <!-- Progress content -->
-        <div v-else class="progress-content">
-          <!-- Monthly Progress -->
-          <div v-if="currentMonthTarget" class="progress-item" data-testid="home-monthly-progress">
-            <h4 class="progress-title">{{ currentMonthTarget.period_display }} Progress</h4>
-            <div class="progress-details">
-              <div class="progress-stats">
-                <span class="current-distance">{{ monthlyProgress?.current || 0 }}km</span>
-                <span class="progress-separator">of</span>
-                <span class="target-distance">{{ currentMonthTarget.distance_km }}km</span>
-              </div>
-              <div class="progress-bar">
-                <div
-                  class="progress-fill"
-                  :style="{ width: `${monthlyProgress?.percentage || 0}%` }"
-                ></div>
-              </div>
-              <div class="progress-percentage">
-                {{ monthlyProgress?.percentage || 0 }}% complete
-              </div>
-            </div>
-          </div>
-
-          <!-- Yearly Progress -->
-          <div v-if="currentYearTarget" class="progress-item" data-testid="home-yearly-progress">
-            <h4 class="progress-title">{{ currentYear }} Progress</h4>
-            <div class="progress-details">
-              <div class="progress-stats">
-                <span class="current-distance">{{ yearlyProgress?.current || 0 }}km</span>
-                <span class="progress-separator">of</span>
-                <span class="target-distance">{{ currentYearTarget.distance_km }}km</span>
-              </div>
-              <div class="progress-bar">
-                <div
-                  class="progress-fill"
-                  :style="{ width: `${yearlyProgress?.percentage || 0}%` }"
-                ></div>
-              </div>
-              <div class="progress-percentage">
-                {{ yearlyProgress?.percentage || 0 }}% complete
-              </div>
-            </div>
-          </div>
-
-          <!-- No targets message -->
-          <div v-if="!currentMonthTarget && !currentYearTarget && !isLoading" class="no-targets" data-testid="home-no-targets">
-            <p class="no-targets-text">No targets set for this period.</p>
-            <p class="no-targets-text">
-              <router-link to="/plan" class="target-link">Set targets</router-link> to track your progress!
-            </p>
-          </div>
-        </div>
-      </section>
+      <!-- Progress Section - Now using reusable component -->
+      <ProgressSection
+        :isLoading="isLoading"
+        :targets="targets"
+        :allRuns="allRuns"
+      />
 
       <!-- Activity Section -->
       <section class="activity-section">
@@ -92,43 +37,16 @@
 </template>
 
 <script setup lang="ts">
-import { ref, computed, onMounted } from 'vue'
+import { ref, onMounted } from 'vue'
 import BottomNavigation from './BottomNavigation.vue'
 import RunCalendar from './RunCalendar.vue'
+import ProgressSection from './ProgressSection.vue'
 import { runApi, targetApi, type TargetResponse, type RunResponse } from '@/services/api'
-import { calculateMonthlyTotal, calculateYearlyTotal, calculateProgress } from '@/services/progressCalculation'
 
 // State
 const isLoading = ref(true)
 const targets = ref<TargetResponse[]>([])
 const allRuns = ref<RunResponse[]>([])
-
-// Get current year and month
-const currentYear = new Date().getFullYear()
-const currentMonth = new Date().getMonth() + 1 // getMonth() returns 0-11
-const currentMonthKey = `${currentYear}-${currentMonth.toString().padStart(2, '0')}`
-
-// Computed: Current month and year targets
-const currentMonthTarget = computed(() => {
-  return targets.value.find(t => t.target_type === 'monthly' && t.period === currentMonthKey)
-})
-
-const currentYearTarget = computed(() => {
-  return targets.value.find(t => t.target_type === 'yearly' && t.period === currentYear.toString())
-})
-
-// Computed: Aggregated progress calculations
-const monthlyProgress = computed(() => {
-  if (!currentMonthTarget.value) return null
-  const monthlyTotal = calculateMonthlyTotal(allRuns.value, currentMonthKey)
-  return calculateProgress(monthlyTotal, currentMonthTarget.value)
-})
-
-const yearlyProgress = computed(() => {
-  if (!currentYearTarget.value) return null
-  const yearlyTotal = calculateYearlyTotal(allRuns.value, currentYear.toString())
-  return calculateProgress(yearlyTotal, currentYearTarget.value)
-})
 
 // Load data when component mounts
 onMounted(async () => {
@@ -140,7 +58,7 @@ const loadData = async () => {
   isLoading.value = true
   try {
     // Load targets and runs in parallel
-    const [targetsResult, runsResult] = await Promise.all([
+    await Promise.all([
       loadTargets(),
       loadAllRuns()
     ])
@@ -211,121 +129,34 @@ const loadAllRuns = async () => {
 
 .section-title {
   color: var(--white-off);
-  font-size: 1.25rem;
-  font-weight: 600;
-  margin-bottom: 1rem;
-}
-
-/* Progress Section Styles */
-.progress-section {
-  margin-bottom: 2rem;
-}
-
-.loading-message {
-  text-align: center;
-  color: var(--gray-cool);
-  padding: 2rem;
-  background-color: var(--charcoal-medium);
-  border-radius: 0.75rem;
-  border: 1px solid var(--gray-cool);
-}
-
-.progress-content {
-  display: flex;
-  flex-direction: column;
-  gap: 1rem;
-}
-
-.progress-item {
-  background-color: var(--charcoal-medium);
-  border-radius: 0.75rem;
-  padding: 1.5rem;
-  border: 1px solid var(--gray-cool);
-}
-
-.progress-title {
-  color: var(--white-off);
   font-size: 1rem;
   font-weight: 600;
   margin-bottom: 1rem;
-  text-align: center;
-}
-
-.progress-details {
-  text-align: center;
-}
-
-.progress-stats {
-  display: flex;
-  justify-content: center;
-  align-items: center;
-  gap: 0.5rem;
-  margin-bottom: 1rem;
-}
-
-.current-distance {
-  color: var(--yellow-safety);
-  font-weight: 600;
-  font-size: 1.2rem;
-}
-
-.progress-separator {
-  color: var(--gray-cool);
-  font-size: 1rem;
-}
-
-.target-distance {
-  color: var(--white-off);
-  font-weight: 500;
-  font-size: 1.2rem;
-}
-
-.progress-bar {
-  background-color: var(--charcoal-dark);
-  height: 10px;
-  border-radius: 5px;
-  overflow: hidden;
-  margin-bottom: 0.75rem;
-}
-
-.progress-fill {
-  background-color: var(--yellow-safety);
-  height: 100%;
-  border-radius: 5px;
-  transition: width 0.3s ease;
-}
-
-.progress-percentage {
-  color: var(--gray-cool);
-  font-size: 0.9rem;
-  font-weight: 500;
-}
-
-.no-targets {
-  text-align: center;
-  padding: 2rem;
-  background-color: var(--charcoal-medium);
-  border-radius: 0.75rem;
-  border: 1px solid var(--gray-cool);
-}
-
-.no-targets-text {
-  color: var(--gray-cool);
-  margin-bottom: 0.5rem;
-}
-
-.target-link {
-  color: var(--blue-cyan);
-  text-decoration: none;
-  font-weight: 500;
-}
-
-.target-link:hover {
-  text-decoration: underline;
 }
 
 /* Activity Section Styles */
 .activity-section {
   margin-bottom: 2rem;
+}
+
+/* Mobile optimizations */
+@media (max-width: 768px) {
+  .header-content {
+    height: 3rem;
+  }
+
+  .app-title {
+    font-size: 1.75rem;
+    margin-top: 0.25rem;
+  }
+
+  .main-content {
+    padding: 1rem 1.5rem;
+  }
+
+  .section-title {
+    font-size: 1rem;
+    margin-bottom: 0.75rem;
+  }
 }
 </style>
