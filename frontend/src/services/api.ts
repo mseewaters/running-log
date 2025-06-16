@@ -124,6 +124,11 @@ export const targetApi = {
     const response = await api.put(`/targets/${targetId}`, targetData)
     return response.data
   },
+
+  // Delete a target
+  deleteTarget: async (targetId: string): Promise<void> => {
+    await api.delete(`/targets/${targetId}`)
+  },
 }
 
 export default api

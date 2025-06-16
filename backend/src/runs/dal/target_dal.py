@@ -96,3 +96,15 @@ def upsert_target(target):
     }
 
     table.put_item(Item=item)
+
+
+def delete_target_by_id(target_id, user_id):
+    """Delete a specific target from DynamoDB"""
+    table = _get_table()
+
+    table.delete_item(
+        Key={
+            "user_id": user_id,
+            "target_id": target_id,
+        }
+    )

@@ -517,3 +517,45 @@ def update_target(
     except Exception as e:
         print(f"Target update error: {e}")  # Debug
         raise HTTPException(status_code=500, detail=f"Target update failed: {str(e)}")
+
+
+@app.delete("/targets/{target_id}")
+def delete_target(
+    target_id: str,
+    current_user_id: str = Depends(get_current_user_id),
+):
+    """Delete an existing target for the authenticated user"""
+    try:
+        # Import Target DAL
+        try:
+            from dal.target_dal import get_targets_by_user, delete_target_by_id
+        except ImportError:
+            from .dal.target_dal import get_targets_by_user, delete_target_by_id
+
+        # First, verify the target exists and belongs to the current user
+        existing_targets = get_targets_by_user(current_user_id)
+        target_to_delete = None
+
+        for target in existing_targets:
+            if target.target_id == target_id:
+                target_to_delete = target
+                break
+
+        if not target_to_delete:
+            raise HTTPException(
+                status_code=404,
+                detail="Target not found or does not belong to current user",
+            )
+
+        # Delete the target from database
+        delete_target_by_id(target_id, current_user_id)
+
+        # Return success (204 No Content is typical for successful DELETE)
+        return {"message": "Target deleted successfully"}
+
+    except HTTPException:
+        # Re-raise HTTP exceptions (like 404)
+        raise
+    except Exception as e:
+        print(f"Target delete error: {e}")  # Debug
+        raise HTTPException(status_code=500, detail=f"Target deletion failed: {str(e)}")

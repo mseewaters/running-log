@@ -1,6 +1,6 @@
 <template>
   <div class="page-container">
-    <!-- Header matching HomePage and QuickLogPage -->
+    <!-- Header matching HomePage -->
     <header class="app-header">
       <div class="header-content">
         <h1 class="app-title">FINISH LINES</h1>
@@ -12,381 +12,317 @@
       </div>
     </header>
 
-    <!-- Navigation directly below header -->
+    <!-- Navigation -->
     <BottomNavigation />
 
     <!-- Main content -->
     <main class="main-content">
-      <h2 data-testid="page-title" class="page-title">Set Target</h2>
+      <div class="target-table-container">
+        <h2 class="section-title">Click to set or edit your targets</h2>
+      </div>
 
-      <!-- Target Setting Form -->
-      <form
-        data-testid="target-setting-form"
-        @submit.prevent="handleTargetCreation"
-        class="target-setting-form"
-      >
-        <!-- General error message -->
-        <div v-if="errors.general" data-testid="general-error" class="error-message general-error">
-          {{ errors.general }}
+      <!-- Loading state -->
+      <div v-if="isLoading" class="loading-message">
+        Loading your targets and progress...
+      </div>
+
+      <!-- Target table -->
+      <div v-else class="target-table">
+        <!-- Table Headers -->
+        <div class="table-header">
+          <div class="header-period">Period</div>
+          <div class="header-target">Target</div>
+          <div class="header-actual">Actual</div>
         </div>
-
-        <!-- Target Type Selection -->
-        <div class="form-group">
-          <label class="form-label">Target Type:</label>
-          <div class="select-wrapper">
-            <select
-              data-testid="target-type-select"
-              class="form-input form-select"
-              v-model="targetType"
-            >
-              <option value="monthly">Monthly</option>
-              <option value="yearly">Yearly</option>
-            </select>
-            <div class="select-arrow">
-              <svg width="12" height="8" viewBox="0 0 12 8" fill="none">
-                <path d="M1 1L6 6L11 1" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
-              </svg>
-            </div>
+        <!-- Yearly Target Row -->
+        <div class="target-row yearly-row" @click="openYearlyModal">
+          <div class="period-label">
+            <strong>{{ currentYear }} Target</strong>
           </div>
-        </div>
-
-        <!-- Period Input -->
-        <div class="form-group">
-          <label class="form-label">Period:</label>
-          <input
-            data-testid="period-input"
-            type="text"
-            :placeholder="targetType === 'monthly' ? 'YYYY-MM (e.g., 2025-06)' : 'YYYY (e.g., 2025)'"
-            class="form-input"
-            :class="{ 'input-error': errors.period }"
-            v-model="period"
-          />
-          <div v-if="errors.period" data-testid="period-error" class="error-message">
-            {{ errors.period }}
-          </div>
-        </div>
-
-        <!-- Distance Input -->
-        <div class="form-group">
-          <label class="form-label">Target Distance:</label>
-          <div class="input-with-suffix">
-            <input
-              data-testid="distance-input"
-              type="number"
-              step="0.1"
-              min="0"
-              placeholder="100"
-              class="form-input distance-input"
-              :class="{ 'input-error': errors.distance }"
-              v-model.number="distanceKm"
-            />
-            <span class="input-suffix">km</span>
-          </div>
-          <div v-if="errors.distance" data-testid="distance-error" class="error-message">
-            {{ errors.distance }}
-          </div>
-        </div>
-
-        <!-- Create Target Button -->
-        <button
-          data-testid="create-target-button"
-          type="submit"
-          class="save-button"
-          :disabled="isLoading"
-        >
-          {{ isLoading ? 'Creating Target...' : 'Create Target' }}
-        </button>
-      </form>
-
-      <!-- Existing Targets Section -->
-      <section data-testid="targets-section" class="targets-section">
-        <h3 class="section-title">Current Targets</h3>
-
-        <div v-if="isLoadingTargets" class="loading-message">
-          Loading targets...
-        </div>
-
-        <div v-else-if="!targets || targets.length === 0" data-testid="no-targets-message" class="no-targets">
-          No targets set yet. Create your first target above!
-        </div>
-
-        <div v-else data-testid="targets-table" class="targets-table">
-          <!-- Yearly Target -->
-          <div v-for="yearlyTarget in yearlyTargets" :key="yearlyTarget.target_id"
-               :data-testid="`target-row-yearly-${yearlyTarget.period}`"
-               class="target-row">
-            <span class="target-period">{{ yearlyTarget.period }}</span>
-            <span class="target-distance">{{ yearlyTarget.distance_km }}km</span>
-          </div>
-
-          <!-- Monthly Targets for Current Year -->
-          <div v-for="month in monthsInCurrentYear" :key="month.key"
-               :data-testid="`target-row-monthly-${month.key}`"
-               class="target-row">
-            <span class="target-period">{{ month.display }}</span>
-            <span class="target-distance">
-              <span v-if="month.target">{{ month.target.distance_km }}km</span>
-              <span v-else class="no-target">Not set</span>
+          <div class="target-cell clickable">
+            <span class="target-value yearly-target">
+              {{ yearlyTarget ? `${yearlyTarget.distance_km.toFixed(1)} km` : 'Click to set' }}
             </span>
           </div>
+          <div class="actual-cell">
+            <span class="actual-value">{{ yearlyActual.toFixed(1) }} km</span>
+          </div>
         </div>
-      </section>
+
+        <!-- Yearly to Monthly Separator -->
+        <div class="table-separator"></div>
+
+        <!-- Monthly Target Rows -->
+        <div
+          v-for="month in monthsData"
+          :key="month.key"
+          class="target-row monthly-row"
+          :class="{
+            'past-month': month.isPast,
+            'current-month': month.isCurrent,
+            'clickable': !month.isPast
+          }"
+          @click="openMonthlyModal(month)"
+        >
+          <div class="period-label">
+            {{ month.label }}
+          </div>
+          <div class="target-cell">
+            <span
+              class="target-value"
+              :class="{
+                'past-target': month.isPast,
+                'auto-target': month.isAutoCalculated,
+                'user-target': month.hasUserTarget
+              }"
+            >
+              {{ getMonthlyTargetDisplay(month) }}
+            </span>
+          </div>
+          <div class="actual-cell">
+            <span class="actual-value">{{ month.actual.toFixed(1) }} km</span>
+          </div>
+        </div>
+      </div>
+
+      <!-- Save Status Toast -->
+      <div v-if="saveStatus" class="save-status" :class="saveStatus.type">
+        {{ saveStatus.message }}
+      </div>
     </main>
+
+    <!-- Target Edit Modal -->
+    <TargetEditModal
+      :isOpen="modalOpen"
+      :monthKey="selectedMonthKey"
+      :displayName="selectedDisplayName"
+      :existingTarget="selectedTarget"
+      @close="closeModal"
+      @success="handleModalSuccess"
+    />
   </div>
 </template>
 
 <script setup lang="ts">
 import { ref, computed, onMounted } from 'vue'
-import { useRouter } from 'vue-router'
-import { targetApi, type TargetResponse } from '@/services/api'
 import BottomNavigation from './BottomNavigation.vue'
+import TargetEditModal from './TargetEditModal.vue'
+import { targetApi, runApi, type TargetResponse, type RunResponse } from '@/services/api'
+import { calculateMonthlyTotal, calculateYearlyTotal } from '@/services/progressCalculation'
 
-const router = useRouter()
-
-// Reactive state
-const targetType = ref<'monthly' | 'yearly'>('monthly')
-const period = ref('')
-const distanceKm = ref<number | null>(null)
-const isLoading = ref(false)
-const isLoadingTargets = ref(false)
+// State management
+const isLoading = ref(true)
 const targets = ref<TargetResponse[]>([])
-const errors = ref({
-  period: '',
-  distance: '',
-  general: ''
-})
+const allRuns = ref<RunResponse[]>([])
+const saveStatus = ref<{ type: 'success' | 'error', message: string } | null>(null)
 
-// Get current year
+// Modal state
+const modalOpen = ref(false)
+const selectedMonthKey = ref('')
+const selectedDisplayName = ref('')
+const selectedTarget = ref<TargetResponse | null>(null)
+
+// Monthly target data interface
+interface MonthData {
+  key: string
+  label: string
+  isPast: boolean
+  isCurrent: boolean
+  actual: number
+  hasUserTarget: boolean
+  isAutoCalculated: boolean
+  userTarget?: TargetResponse
+}
+
+// Constants
 const currentYear = new Date().getFullYear()
+const currentMonth = new Date().getMonth() + 1
+const monthNames = [
+  'January', 'February', 'March', 'April', 'May', 'June',
+  'July', 'August', 'September', 'October', 'November', 'December'
+]
 
-// Computed: Yearly targets
-const yearlyTargets = computed(() => {
-  return targets.value?.filter(target => target.target_type === 'yearly') || []
+// Computed: Yearly target and actual
+const yearlyTarget = computed(() => {
+  return targets.value.find(t => t.target_type === 'yearly' && t.period === currentYear.toString())
 })
 
-// Computed: Months in current year with targets
-const monthsInCurrentYear = computed(() => {
-  const months = [
-    { key: `${currentYear}-01`, display: 'January', month: 1 },
-    { key: `${currentYear}-02`, display: 'February', month: 2 },
-    { key: `${currentYear}-03`, display: 'March', month: 3 },
-    { key: `${currentYear}-04`, display: 'April', month: 4 },
-    { key: `${currentYear}-05`, display: 'May', month: 5 },
-    { key: `${currentYear}-06`, display: 'June', month: 6 },
-    { key: `${currentYear}-07`, display: 'July', month: 7 },
-    { key: `${currentYear}-08`, display: 'August', month: 8 },
-    { key: `${currentYear}-09`, display: 'September', month: 9 },
-    { key: `${currentYear}-10`, display: 'October', month: 10 },
-    { key: `${currentYear}-11`, display: 'November', month: 11 },
-    { key: `${currentYear}-12`, display: 'December', month: 12 }
-  ]
+const yearlyActual = computed(() => {
+  return calculateYearlyTotal(allRuns.value, currentYear.toString())
+})
 
-  return months.map(month => {
-    const target = targets.value?.find(t =>
-      t.target_type === 'monthly' && t.period === month.key
-    )
-    return { ...month, target }
+// Computed: Monthly targets
+const monthlyTargets = computed(() => {
+  return targets.value.filter(t => t.target_type === 'monthly')
+})
+
+// Helper: Get actual distance for a month
+const getMonthlyActual = (monthIndex: number): number => {
+  const monthKey = `${currentYear}-${(monthIndex + 1).toString().padStart(2, '0')}`
+  return calculateMonthlyTotal(allRuns.value, monthKey)
+}
+
+// Helper: Calculate auto monthly targets
+const calculateAutoMonthlyTargets = (): Record<string, number> => {
+  if (!yearlyTarget.value) return {}
+
+  const totalYearTarget = yearlyTarget.value.distance_km
+  let remainingTarget = totalYearTarget
+
+  // Subtract actual distance from completed months
+  for (let i = 0; i < currentMonth - 1; i++) {
+    remainingTarget -= getMonthlyActual(i)
+  }
+
+  // Subtract user-set monthly targets for remaining months
+  const userSetMonths = new Set<number>()
+  monthlyTargets.value.forEach(target => {
+    const [year, month] = target.period.split('-')
+    if (year === currentYear.toString()) {
+      const monthIndex = parseInt(month) - 1
+      if (monthIndex >= currentMonth - 1) { // Current month and future
+        remainingTarget -= target.distance_km
+        userSetMonths.add(monthIndex)
+      }
+    }
+  })
+
+  // Calculate months without user targets (from current month onwards)
+  const monthsWithoutTargets = []
+  for (let i = currentMonth - 1; i < 12; i++) {
+    if (!userSetMonths.has(i)) {
+      monthsWithoutTargets.push(i)
+    }
+  }
+
+  // Distribute remaining target across months without user targets
+  const autoTargets: Record<string, number> = {}
+  if (monthsWithoutTargets.length > 0 && remainingTarget > 0) {
+    const autoTargetPerMonth = remainingTarget / monthsWithoutTargets.length
+    monthsWithoutTargets.forEach(monthIndex => {
+      const monthKey = `${currentYear}-${(monthIndex + 1).toString().padStart(2, '0')}`
+      autoTargets[monthKey] = Math.round(autoTargetPerMonth * 10) / 10 // Round to 1 decimal
+    })
+  }
+
+  return autoTargets
+}
+
+// Computed: Months data for display
+const monthsData = computed((): MonthData[] => {
+  const autoTargets = calculateAutoMonthlyTargets()
+
+  return monthNames.map((name, index) => {
+    const monthKey = `${currentYear}-${(index + 1).toString().padStart(2, '0')}`
+    const userTarget = monthlyTargets.value.find(t => t.period === monthKey)
+    const hasUserTarget = !!userTarget
+    const isAutoCalculated = !hasUserTarget && !!autoTargets[monthKey]
+
+    return {
+      key: monthKey,
+      label: name,
+      isPast: index < currentMonth - 1,
+      isCurrent: index === currentMonth - 1,
+      actual: getMonthlyActual(index),
+      hasUserTarget,
+      isAutoCalculated,
+      userTarget
+    }
   })
 })
 
-// Load targets on component mount
-onMounted(async () => {
-  await loadTargets()
-})
+// Display helper: Get monthly target display text
+const getMonthlyTargetDisplay = (month: MonthData): string => {
+  if (month.hasUserTarget && month.userTarget) {
+    return `${month.userTarget.distance_km.toFixed(1)} km`
+  }
+  if (month.isAutoCalculated) {
+    const autoTargets = calculateAutoMonthlyTargets()
+    return `Auto: ${autoTargets[month.key].toFixed(1)} km`
+  }
+  return 'Click to set'
+}
 
-// Load targets from API
+// Modal handlers
+const openYearlyModal = () => {
+  selectedMonthKey.value = currentYear.toString()
+  selectedDisplayName.value = `${currentYear}`  // Just the year
+  selectedTarget.value = yearlyTarget.value || null
+  modalOpen.value = true
+}
+
+const openMonthlyModal = (month: MonthData) => {
+  // Don't allow editing past months
+  if (month.isPast) return
+
+  selectedMonthKey.value = month.key
+  selectedDisplayName.value = `${month.label} ${currentYear}`  // "June 2025"
+  selectedTarget.value = month.userTarget || null
+  modalOpen.value = true
+}
+
+const closeModal = () => {
+  modalOpen.value = false
+  selectedMonthKey.value = ''
+  selectedDisplayName.value = ''
+  selectedTarget.value = null
+}
+
+const handleModalSuccess = async () => {
+  // Reload data and close modal
+  await loadTargets()
+  closeModal()
+  showSaveStatus('success', 'Target saved successfully!')
+}
+
+// Data loading
 const loadTargets = async () => {
-  isLoadingTargets.value = true
   try {
     targets.value = await targetApi.getTargets()
   } catch (error) {
     console.error('Failed to load targets:', error)
-  } finally {
-    isLoadingTargets.value = false
+    showSaveStatus('error', 'Failed to load targets')
   }
 }
 
-// Form validation
-const validateForm = () => {
-  errors.value = {
-    period: '',
-    distance: '',
-    general: ''
-  }
-
-  // Period validation
-  if (!period.value.trim()) {
-    errors.value.period = 'Period is required'
-  } else if (targetType.value === 'monthly') {
-    // Validate YYYY-MM format
-    if (!/^\d{4}-\d{2}$/.test(period.value)) {
-      errors.value.period = 'Invalid format. Use YYYY-MM (e.g., 2025-06)'
-    } else {
-      const [year, month] = period.value.split('-')
-      if (parseInt(month) < 1 || parseInt(month) > 12) {
-        errors.value.period = 'Invalid month. Must be 01-12'
-      }
-    }
-  } else if (targetType.value === 'yearly') {
-    // Validate YYYY format
-    if (!/^\d{4}$/.test(period.value)) {
-      errors.value.period = 'Invalid format. Use YYYY (e.g., 2025)'
-    }
-  }
-
-  // Distance validation
-  if (!distanceKm.value || distanceKm.value <= 0) {
-    errors.value.distance = 'Distance must be greater than 0'
-  }
-
-  // Return true if no errors
-  return !Object.values(errors.value).some(error => error !== '')
-}
-
-// Handle target creation submission
-const handleTargetCreation = async () => {
-  if (!validateForm()) {
-    return
-  }
-
-  isLoading.value = true
-  errors.value.general = ''
-
+const loadRuns = async () => {
   try {
-    // Call target API
-    const response = await targetApi.createTarget({
-      target_type: targetType.value,
-      period: period.value.trim(),
-      distance_km: distanceKm.value!
-    })
+    allRuns.value = await runApi.getRuns()
+  } catch (error) {
+    console.error('Failed to load runs:', error)
+    showSaveStatus('error', 'Failed to load runs')
+  }
+}
 
-    console.log('Target created successfully:', response)
+// Utility: Show save status toast
+const showSaveStatus = (type: 'success' | 'error', message: string) => {
+  saveStatus.value = { type, message }
+  setTimeout(() => {
+    saveStatus.value = null
+  }, 3000)
+}
 
-    // Reload targets to show the new one
-    await loadTargets()
-
-    // Clear form
-    period.value = ''
-    distanceKm.value = null
-
-  } catch (error: any) {
-    console.error('Target creation failed:', error)
-
-    // Handle different error types
-    if (error.response?.status === 400) {
-      errors.value.general = error.response.data?.detail || 'Target creation failed'
-    } else if (error.response?.status === 409) {
-      errors.value.general = 'A target for this period already exists'
-    } else if (error.response?.status === 422) {
-      errors.value.general = 'Please check your inputs.'
-    } else if (error.response?.status >= 500) {
-      errors.value.general = 'Server error. Please try again later.'
-    } else {
-      errors.value.general = error.response?.data?.detail || 'Target creation failed. Please try again.'
-    }
+// Lifecycle
+onMounted(async () => {
+  console.log('Component mounted, loading data...')
+  isLoading.value = true
+  try {
+    await Promise.all([loadTargets(), loadRuns()])
   } finally {
     isLoading.value = false
   }
-}
+})
 </script>
 
 <style scoped>
-/* Mobile form improvements */
-@media (max-width: 768px) {
-  .form-input {
-    font-size: 16px; /* Prevents iOS zoom on input focus */
-    padding: 0.875rem 1rem; /* Slightly larger touch targets */
-    min-height: 48px; /* Accessibility minimum */
-  }
-
-  .page-title {
-    font-size: 1rem;
-    margin-bottom: 1rem;
-    margin-top: 0.5rem;
-  }
-
-  .distance-input {
-    padding-right: 3.5rem; /* More space for km suffix on mobile */
-  }
-
-  .form-group {
-    margin-bottom: 0.75rem; /* More spacing between fields */
-  }
-}
-
-/* Improved select dropdown styling */
-.select-wrapper {
-  position: relative;
-}
-
-.form-select {
-  appearance: none;
-  -webkit-appearance: none;
-  -moz-appearance: none;
-  background-color: var(--white-off);
-  cursor: pointer;
-  padding-right: 2.5rem; /* Space for custom arrow */
-  background-image: none; /* Remove any background arrow */
-}
-
-/* Firefox specific fix */
-.form-select::-moz-focus-inner {
-  border: 0;
-}
-
-/* Remove IE arrow */
-.form-select::-ms-expand {
-  display: none;
-}
-
-.select-arrow {
-  position: absolute;
-  right: 0.75rem;
-  top: 50%;
-  transform: translateY(-50%);
-  pointer-events: none;
-  color: var(--charcoal-dark);
-}
-
-/* Better input placeholder styling */
-.form-input::placeholder {
-  color: var(--gray-placeholder);
-  font-style: italic;
-}
-
-/* Input with suffix styling */
-.input-with-suffix {
-  position: relative;
-  width: 100%;
-}
-
-.input-suffix {
-  position: absolute;
-  right: 0.75rem;
-  top: 50%;
-  transform: translateY(-50%);
-  color: var(--gray-placeholder);
-  font-size: 1rem;
-  pointer-events: none;
-  font-weight: 500;
-}
-
-/* Ensure consistent mobile button sizing */
-@media (max-width: 768px) {
-  .save-button {
-    min-height: 48px;
-    font-size: 1rem;
-    padding: 1rem;
-  }
-}
-
+/* Base styles - same as original but with clickable improvements */
 .page-container {
   min-height: 100vh;
   background-color: var(--charcoal-dark);
   color: var(--white-off);
+  padding-bottom: 80px;
 }
 
-/* Reuse header styles from HomePage and QuickLogPage */
 .app-header {
   background-color: var(--charcoal-dark);
   padding: 0rem 1rem;
@@ -415,170 +351,288 @@ const handleTargetCreation = async () => {
 }
 
 .main-content {
-  padding: 0.75rem 1.5rem;
+  padding: 1.5rem;
 }
 
-.page-title {
-  color: var(--white-off);
-  font-size: 1rem;
-  font-weight: 600;
-  margin-bottom: 0.5rem;
-}
-
-.target-setting-form {
-  max-width: 800px;
-}
-
-.form-group {
-  margin-bottom: 0.75rem;
-}
-
-.form-label {
-  color: var(--white-off);
-  font-size: 1rem;
-  font-weight: 500;
-  display: block;
-  margin-bottom: 0.1rem;
-}
-
-.form-input {
-  width: 100%;
-  padding: 0.75rem 1rem;
-  background-color: var(--white-off);
-  border: none;
-  border-radius: 0.5rem;
-  color: var(--charcoal-dark);
-  font-size: 1rem;
-  min-height: 44px;
-}
-
-.form-select {
-  cursor: pointer;
-}
-
-.form-input::placeholder {
-  color: var(--gray-placeholder);
-}
-
-.input-with-suffix {
-  position: relative;
-  display: flex;
-  align-items: center;
-}
-
-.distance-input {
-  padding-right: 2.5rem; /* Space for suffix */
-}
-
-.input-suffix {
-  position: absolute;
-  right: 1rem;
-  color: var(--gray-placeholder);
-  font-size: 1rem;
-  pointer-events: none;
-  font-weight: 500;
-}
-
-.input-error {
-  border: 2px solid var(--red-alert) !important;
-}
-
-.error-message {
-  color: var(--red-alert);
-  font-size: 0.875rem;
-  margin-top: 0.5rem;
-  font-weight: 500;
-}
-
-.general-error {
-  margin-bottom: 1rem;
-  padding: 0.75rem;
-  background-color: rgba(239, 68, 68, 0.1);
-  border-radius: 0.5rem;
-  text-align: center;
-}
-
-.save-button {
-  width: 100%;
-  background-color: var(--yellow-safety);
-  color: var(--charcoal-dark);
-  padding: 0.75rem;
-  border: none;
-  border-radius: 0.5rem;
-  font-weight: 600;
-  font-size: 1.125rem;
-  margin-top: 1.5rem;
-  min-height: 44px;
-  cursor: pointer;
-}
-
-.save-button:disabled {
-  opacity: 0.7;
-  cursor: not-allowed;
-}
-
-/* Targets Section Styles */
-.targets-section {
-  margin-top: 2rem;
-  max-width: 400px;
+.target-table-container {
+  max-width: 600px;
+  margin: 0 auto;
 }
 
 .section-title {
   color: var(--white-off);
-  font-size: 1.25rem;
-  font-weight: 600;
+  font-size: 1.125rem;
+  font-weight: 500;
   margin-bottom: 1rem;
+  text-align: left;
+  opacity: 0.9;
 }
 
 .loading-message {
   text-align: center;
   color: var(--gray-cool);
-  padding: 1rem;
-}
-
-.no-targets {
-  text-align: center;
-  color: var(--gray-cool);
-  padding: 1.5rem;
+  padding: 2rem;
   background-color: var(--charcoal-medium);
-  border-radius: 0.5rem;
+  border-radius: 0.75rem;
   border: 1px solid var(--gray-cool);
 }
 
-.targets-table {
+.target-table {
   background-color: var(--charcoal-medium);
-  border-radius: 0.5rem;
+  border-radius: 0.75rem;
   border: 1px solid var(--gray-cool);
   overflow: hidden;
 }
 
-.target-row {
-  display: flex;
-  justify-content: space-between;
+.table-header {
+  display: grid;
+  grid-template-columns: 2fr 2fr 1.5fr;
   align-items: center;
   padding: 0.75rem 1rem;
+  background-color: var(--charcoal-dark);
+  border-bottom: 3px solid var(--yellow-safety);
+  font-weight: 600;
+  font-size: 0.9rem;
+  color: var(--white-off);
+}
+
+.header-period {
+  color: var(--white-off);
+}
+
+.header-target {
+  text-align: center;
+  color: var(--yellow-safety);
+}
+
+.header-actual {
+  text-align: right;
+  color: var(--blue-cyan);
+}
+
+.target-row {
+  display: grid;
+  grid-template-columns: 2fr 2fr 1.5fr;
+  align-items: center;
+  min-height: 3rem;
+  padding: 0.75rem 1rem;
   border-bottom: 1px solid var(--gray-cool);
+  transition: background-color 0.2s;
 }
 
 .target-row:last-child {
   border-bottom: none;
 }
 
-.target-period {
+.target-row.clickable {
+  cursor: pointer;
+}
+
+.target-row.clickable:hover {
+  background-color: rgba(255, 255, 255, 0.05);
+}
+
+.yearly-row {
+  background-color: var(--charcoal-dark);
+  font-weight: 600;
+}
+
+.yearly-row:hover {
+  background-color: rgba(255, 193, 7, 0.05);
+}
+
+.monthly-row {
+  background-color: var(--charcoal-dark); /* Active months match yearly row */
+}
+
+.monthly-row:hover {
+  background-color: rgba(255, 255, 255, 0.05);
+}
+
+.past-month {
+  background-color: var(--charcoal-medium) !important; /* Past months are lighter/inactive */
+  opacity: 0.7;
+  cursor: default !important;
+}
+
+.past-month:hover {
+  background-color: var(--charcoal-medium) !important; /* No hover effect for past months */
+}
+
+.current-month {
+  background-color: rgba(255, 193, 7, 0.1); /* Current month gets yellow tint */
+}
+
+.table-separator {
+  height: 2px;
+  background-color: var(--yellow-safety);
+  margin: 0;
+}
+
+.period-label {
   color: var(--white-off);
   font-weight: 500;
+}
+
+.target-cell {
+  text-align: center;
+  padding: 0.5rem;
+  border-radius: 0.25rem;
+}
+
+.target-value {
+  font-weight: 600;
   font-size: 0.95rem;
 }
 
-.target-distance {
+.yearly-target {
   color: var(--yellow-safety);
-  font-weight: 600;
-  font-size: 1rem;
+  font-size: 1.1rem;
 }
 
-.no-target {
-  color: var(--gray-cool);
+.user-target {
+  color: var(--yellow-safety);
+}
+
+.auto-target {
+  color: var(--yellow-safety);
   font-style: italic;
-  font-weight: normal;
+  opacity: 0.8;
+}
+
+.past-target {
+  color: var(--gray-cool);
+}
+
+.actual-cell {
+  text-align: right;
+}
+
+.actual-value {
+  color: var(--blue-cyan);
+  font-weight: 600;
+  font-size: 0.95rem;
+}
+
+.legend {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 1rem;
+  margin-top: 1rem;
+  padding: 1rem;
+  background-color: var(--charcoal-medium);
+  border-radius: 0.5rem;
+  border: 1px solid var(--gray-cool);
+}
+
+.legend-item {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  font-size: 0.85rem;
+  color: var(--white-off);
+}
+
+.legend-color {
+  width: 12px;
+  height: 12px;
+  border-radius: 2px;
+  font-weight: 600;
+}
+
+.legend-color.your-targets {
+  background-color: var(--yellow-safety);
+}
+
+.legend-color.actual-value {
+  background-color: var(--blue-cyan);
+}
+
+.save-status {
+  position: fixed;
+  top: 20px;
+  right: 20px;
+  padding: 0.75rem 1rem;
+  border-radius: 0.5rem;
+  font-weight: 500;
+  z-index: 1000;
+  box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+}
+
+.save-status.success {
+  background-color: rgba(34, 197, 94, 0.9);
+  color: white;
+  border: 1px solid rgba(34, 197, 94, 0.3);
+}
+
+.save-status.error {
+  background-color: rgba(239, 68, 68, 0.9);
+  color: white;
+  border: 1px solid rgba(239, 68, 68, 0.3);
+}
+
+/* Mobile optimizations */
+@media (max-width: 768px) {
+  .header-content {
+    height: 3rem;
+  }
+
+  .app-title {
+    font-size: 1.75rem;
+    margin-top: 0.25rem;
+  }
+
+  .main-content {
+    padding: 1rem 1.5rem;
+  }
+
+  .target-table-container {
+    margin: 0;
+  }
+
+  .section-title {
+    font-size: 1rem;
+    margin-bottom: 0.75rem;
+  }
+
+  .table-header {
+    grid-template-columns: 2fr 1.5fr 1fr;
+    padding: 0.5rem 0.75rem;
+    font-size: 0.8rem;
+  }
+
+  .target-row {
+    grid-template-columns: 2fr 1.5fr 1fr;
+    min-height: 2.5rem;
+    padding: 0.5rem 0.75rem;
+  }
+
+  .period-label {
+    font-size: 0.9rem;
+  }
+
+  .target-value {
+    font-size: 0.85rem;
+  }
+
+  .yearly-target {
+    font-size: 1rem;
+  }
+
+  .legend {
+    gap: 0.75rem;
+    padding: 0.75rem;
+  }
+
+  .legend-item {
+    font-size: 0.8rem;
+  }
+
+  .save-status {
+    top: 10px;
+    right: 10px;
+    left: 10px;
+    text-align: center;
+  }
 }
 </style>

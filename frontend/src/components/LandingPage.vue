@@ -95,14 +95,14 @@
       </form>
 
       <!-- Forgot Password Link -->
-      <div class="text-center mt-4">
+      <div class="text-left mt-4">
         <a href="#" class="forgot-link">
           Forgot password?
         </a>
       </div>
 
       <!-- Register Link -->
-      <div class="text-center mt-4">
+      <div class="text-left mt-4">
         <span class="register-text">Don't have an account? </span>
         <router-link data-testid="register-link" to="/register" class="register-link">
           Register
