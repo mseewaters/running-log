@@ -119,8 +119,7 @@ def update_run_by_id(run_id, user_id, updated_run):
         "run_id": updated_run.run_id,
         "date": updated_run.date.isoformat(),
         "distance_km": updated_run.distance_km,
-        "duration": updated_run.duration,
-        "pace": updated_run.pace,
+        "duration_seconds": updated_run.duration_seconds,
         "notes": updated_run.notes,
         "created_at": updated_run.created_at.isoformat(),
     }
