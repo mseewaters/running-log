@@ -99,3 +99,42 @@ def get_runs_by_user(user_id):
         runs.append(run)
 
     return runs
+
+
+def update_run_by_id(run_id, user_id, updated_run):
+    """Update a specific run in DynamoDB"""
+    table = _get_table()
+
+    # Delete the old run first
+    table.delete_item(
+        Key={
+            "user_id": user_id,
+            "run_id": run_id,
+        }
+    )
+
+    # Save the updated run (same as save_run but with existing run_id)
+    item = {
+        "user_id": updated_run.user_id,
+        "run_id": updated_run.run_id,
+        "date": updated_run.date.isoformat(),
+        "distance_km": updated_run.distance_km,
+        "duration": updated_run.duration,
+        "pace": updated_run.pace,
+        "notes": updated_run.notes,
+        "created_at": updated_run.created_at.isoformat(),
+    }
+
+    table.put_item(Item=item)
+
+
+def delete_run_by_id(run_id, user_id):
+    """Delete a specific run from DynamoDB"""
+    table = _get_table()
+
+    table.delete_item(
+        Key={
+            "user_id": user_id,
+            "run_id": run_id,
+        }
+    )

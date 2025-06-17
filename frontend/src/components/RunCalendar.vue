@@ -172,7 +172,7 @@ const goToNextMonth = () => {
 .calendar-container {
   background-color: var(--charcoal-medium);
   border-radius: 0.75rem;
-  padding: 1rem;
+  padding: 0.5rem;
   border: 1px solid var(--gray-cool);
 }
 
@@ -181,7 +181,7 @@ const goToNextMonth = () => {
   display: flex;
   justify-content: space-between;
   align-items: center;
-  margin-bottom: 1rem;
+  margin-bottom: 0rem;
 }
 
 .nav-button {
@@ -217,7 +217,7 @@ const goToNextMonth = () => {
   display: grid;
   grid-template-columns: repeat(7, 1fr);
   gap: 0.25rem;
-  margin-bottom: 0.5rem;
+  margin-bottom: 0rem;
 }
 
 .weekday {
@@ -225,7 +225,7 @@ const goToNextMonth = () => {
   color: var(--gray-cool);
   font-size: 0.875rem;
   font-weight: 500;
-  padding: 0.5rem 0;
+  padding: 0.25rem 0;
 }
 
 /* Calendar Grid */
@@ -303,7 +303,7 @@ const goToNextMonth = () => {
 /* Responsive adjustments */
 @media (max-width: 400px) {
   .calendar-container {
-    padding: 0.75rem;
+    padding: 0.5rem;
   }
 
   .day-number {

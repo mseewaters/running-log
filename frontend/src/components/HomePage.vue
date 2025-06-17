@@ -18,6 +18,20 @@
 
     <!-- Main content -->
     <main class="main-content">
+      <!-- Quick Log Button Section -->
+      <section class="quick-log-section">
+        <button @click="openQuickLogModal" class="log-run-button">
+          <div class="button-content">
+            <span class="button-text">Log Run</span>
+            <img
+              src="@/assets/runner.png"
+              alt="Runner"
+              class="button-runner-icon"
+            />
+          </div>
+        </button>
+      </section>
+
       <!-- Progress Section - Now using reusable component -->
       <ProgressSection
         :isLoading="isLoading"
@@ -25,14 +39,14 @@
         :allRuns="allRuns"
       />
 
-      <!-- Activity Section -->
-      <section class="activity-section">
-        <h2 class="section-title">Activity</h2>
-
-        <!-- RunCalendar Component -->
-        <RunCalendar :runs="allRuns" />
-      </section>
     </main>
+
+    <!-- Quick Log Modal -->
+    <QuickLogModal
+      :isOpen="showQuickLogModal"
+      @close="closeQuickLogModal"
+      @runSaved="onRunSaved"
+    />
   </div>
 </template>
 
@@ -41,12 +55,14 @@ import { ref, onMounted } from 'vue'
 import BottomNavigation from './BottomNavigation.vue'
 import RunCalendar from './RunCalendar.vue'
 import ProgressSection from './ProgressSection.vue'
+import QuickLogModal from './QuickLogModal.vue'
 import { runApi, targetApi, type TargetResponse, type RunResponse } from '@/services/api'
 
 // State
 const isLoading = ref(true)
 const targets = ref<TargetResponse[]>([])
 const allRuns = ref<RunResponse[]>([])
+const showQuickLogModal = ref(false)
 
 // Load data when component mounts
 onMounted(async () => {
@@ -85,6 +101,20 @@ const loadAllRuns = async () => {
   } catch (error) {
     console.error('Failed to load runs:', error)
   }
+}
+
+// Modal methods
+const openQuickLogModal = () => {
+  showQuickLogModal.value = true
+}
+
+const closeQuickLogModal = () => {
+  showQuickLogModal.value = false
+}
+
+const onRunSaved = () => {
+  // Refresh data after a run is saved
+  loadData()
 }
 </script>
 
@@ -134,6 +164,68 @@ const loadAllRuns = async () => {
   margin-bottom: 1rem;
 }
 
+/* Quick Log Section */
+.quick-log-section {
+  text-align: center;
+  margin-bottom: 1rem;
+  padding: 0.5rem 0;
+}
+
+.log-run-button {
+  background-color: var(--charcoal-dark);
+  color: var(--yellow-safety);
+  border: 1px solid var(--yellow-safety);
+  border-radius: 1rem;
+  padding: 0rem 0rem;
+  font-size: 1.3rem;
+  font-weight: 700;
+  cursor: pointer;
+  transition: all 0.3s ease;
+  box-shadow: 0 8px 16px rgba(255, 193, 7, 0.3);
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 0rem;
+  min-width: 200px;
+  margin: 0 auto;
+  position: relative;
+}
+
+.log-run-button:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 8px 24px rgba(255, 193, 7, 0.4);
+  background-color: var(--charcoal-medium);
+}
+
+.log-run-button:active {
+  transform: translateY(0);
+}
+
+.button-content {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  width: 100%;
+}
+
+.button-text {
+  font-size: 1.3rem;
+  font-weight: 700;
+  color: var(--yellow-safety);
+}
+
+.button-runner-icon {
+  height: auto;
+  width: auto;
+  object-fit: contain;
+  opacity: 0.9;
+  transition: opacity 0.2s;
+}
+
+.log-run-button:hover .button-runner-icon {
+  opacity: 1;
+}
+
 /* Activity Section Styles */
 .activity-section {
   margin-bottom: 2rem;
@@ -157,6 +249,20 @@ const loadAllRuns = async () => {
   .section-title {
     font-size: 1rem;
     margin-bottom: 0.75rem;
+  }
+
+  .log-run-button {
+    padding: 0.5rem 1rem;
+    font-size: 1.3rem;
+    min-width: 180px;
+  }
+
+  .button-runner-icon {
+    height: 2.5rem;
+  }
+
+  .button-text {
+    font-size: 1.2rem;
   }
 }
 </style>

@@ -90,6 +90,17 @@ export const runApi = {
     const response = await api.get('/runs')
     return response.data
   },
+
+  // Update an existing run
+  updateRun: async (runId: string, runData: RunRequest): Promise<RunResponse> => {
+    const response = await api.put(`/runs/${runId}`, runData)
+    return response.data
+  },
+
+  // Delete a run
+  deleteRun: async (runId: string): Promise<void> => {
+    await api.delete(`/runs/${runId}`)
+  },
 }
 
 export const authApi = {

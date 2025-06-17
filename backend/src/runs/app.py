@@ -355,6 +355,109 @@ def get_runs(current_user_id: str = Depends(get_current_user_id)):
         raise HTTPException(status_code=500, detail=f"Internal server error: {str(e)}")
 
 
+@app.put("/runs/{run_id}", response_model=RunResponse)
+def update_run(
+    run_id: str,
+    run_request: RunRequest,
+    current_user_id: str = Depends(get_current_user_id),
+):
+    """Update an existing run for the authenticated user"""
+    try:
+        # Import Run DAL
+        try:
+            from dal.run_dal import get_runs_by_user, update_run_by_id
+        except ImportError:
+            from .dal.run_dal import get_runs_by_user, update_run_by_id
+
+        # First, verify the run exists and belongs to the current user
+        existing_runs = get_runs_by_user(current_user_id)
+        run_to_update = None
+
+        for run in existing_runs:
+            if run.run_id == run_id:
+                run_to_update = run
+                break
+
+        if not run_to_update:
+            raise HTTPException(
+                status_code=404,
+                detail="Run not found or does not belong to current user",
+            )
+
+        # Create updated Run model from request (keeping the same run_id and user_id)
+        from decimal import Decimal
+
+        updated_run = Run(
+            user_id=current_user_id,
+            date=date.fromisoformat(run_request.date),
+            distance_km=Decimal(str(run_request.distance_km)),
+            duration=run_request.duration,
+            notes=run_request.notes or "",
+        )
+
+        # Override the auto-generated run_id with the existing one
+        updated_run.run_id = run_id
+        # Keep the original created_at timestamp
+        updated_run.created_at = run_to_update.created_at
+
+        # Save updated run to database (will replace the existing one)
+        update_run_by_id(run_id, current_user_id, updated_run)
+
+        # Return response
+        return run_to_response(updated_run)
+
+    except HTTPException:
+        # Re-raise HTTP exceptions (like 404)
+        raise
+    except ValueError as e:
+        raise HTTPException(status_code=422, detail=str(e))
+    except Exception as e:
+        print(f"Run update error: {e}")  # Debug
+        raise HTTPException(status_code=500, detail=f"Run update failed: {str(e)}")
+
+
+@app.delete("/runs/{run_id}")
+def delete_run(
+    run_id: str,
+    current_user_id: str = Depends(get_current_user_id),
+):
+    """Delete an existing run for the authenticated user"""
+    try:
+        # Import Run DAL
+        try:
+            from dal.run_dal import get_runs_by_user, delete_run_by_id
+        except ImportError:
+            from .dal.run_dal import get_runs_by_user, delete_run_by_id
+
+        # First, verify the run exists and belongs to the current user
+        existing_runs = get_runs_by_user(current_user_id)
+        run_to_delete = None
+
+        for run in existing_runs:
+            if run.run_id == run_id:
+                run_to_delete = run
+                break
+
+        if not run_to_delete:
+            raise HTTPException(
+                status_code=404,
+                detail="Run not found or does not belong to current user",
+            )
+
+        # Delete the run from database
+        delete_run_by_id(run_id, current_user_id)
+
+        # Return success (204 No Content is typical for successful DELETE)
+        return {"message": "Run deleted successfully"}
+
+    except HTTPException:
+        # Re-raise HTTP exceptions (like 404)
+        raise
+    except Exception as e:
+        print(f"Run delete error: {e}")  # Debug
+        raise HTTPException(status_code=500, detail=f"Run deletion failed: {str(e)}")
+
+
 # Lambda handler for AWS
 def lambda_handler(event, context):
     """AWS Lambda handler"""
