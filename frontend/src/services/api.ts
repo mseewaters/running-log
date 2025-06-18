@@ -32,6 +32,34 @@ api.interceptors.request.use(
   }
 )
 
+// Add response interceptor to handle JWT expiration
+api.interceptors.response.use(
+  (response) => {
+    // Return successful responses unchanged
+    return response
+  },
+  (error) => {
+    // Handle 401 Unauthorized errors (expired/invalid JWT)
+    if (error.response?.status === 401) {
+      console.log('JWT token expired or invalid, logging out user')
+
+      // Clear all auth data from localStorage
+      localStorage.removeItem('access_token')
+      localStorage.removeItem('user_email')
+      localStorage.removeItem('user_id')
+
+      // Redirect to landing page
+      window.location.href = '/'
+
+      // Optional: Show a toast/notification
+      console.log('Session expired. Please log in again.')
+    }
+
+    // Re-throw the error for handling by the calling code
+    return Promise.reject(error)
+  }
+)
+
 // Types for API requests/responses
 export interface RunRequest {
   date: string         // YYYY-MM-DD format

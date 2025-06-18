@@ -21,7 +21,7 @@
       <div class="nav-icon">
         <img src="@/assets/run.svg" alt="Run" class="nav-icon-svg" />
       </div>
-      <span class="nav-label">Log Run</span>
+      <span class="nav-label">Runs</span>
     </router-link>
 
     <router-link
