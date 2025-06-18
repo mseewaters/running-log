@@ -72,7 +72,7 @@
             <label class="form-label">Run Type:</label>
             <div class="select-wrapper">
               <select class="form-input form-select" v-model="formData.runType">
-                <option value="easy">Recovery</option>
+                <option value="easy">Easy</option>
                 <option value="tempo">Tempo</option>
                 <option value="interval">Interval</option>
                 <option value="long">Long</option>
@@ -276,6 +276,8 @@ const handleSubmit = async () => {
     }
 
     console.log('Sending run data:', runData) // Debug log
+    console.log('Form date value:', formData.date)
+    console.log('Form date type:', typeof formData.date)
 
     const response = await runApi.createRun(runData)
     savedRunData.value = response
@@ -316,7 +318,13 @@ const closeModal = () => {
 }
 
 const formatDate = (dateStr: string): string => {
-  const date = new Date(dateStr)
+  // Parse the date string manually to avoid timezone issues
+  const datePart = dateStr.split('T')[0] // Get just the date part (YYYY-MM-DD)
+  const [year, month, day] = datePart.split('-').map(Number)
+
+  // Create date in local timezone (not UTC)
+  const date = new Date(year, month - 1, day) // month is 0-indexed
+
   return date.toLocaleDateString('en-US', {
     weekday: 'long',
     year: 'numeric',

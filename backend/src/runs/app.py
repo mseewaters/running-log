@@ -313,6 +313,12 @@ def create_run(
 ):
     """Create a new run entry - NOW REQUIRES AUTHENTICATION"""
     try:
+
+        print(f"Received date from frontend: {run_request.date}")  # Add this
+        parsed_date = date.fromisoformat(run_request.date)
+        print(f"Parsed date object: {parsed_date}")  # Add this
+        print(f"Date isoformat: {parsed_date.isoformat()}")  # Add this
+
         # Create Run model from request (using real user ID from JWT)
         from decimal import Decimal
 

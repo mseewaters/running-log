@@ -55,7 +55,7 @@
               <!-- Display mode -->
               <div v-if="editingRunId !== run.run_id" class="run-display">
                 <div class="run-type-sidebar">
-                  {{ getRunTypeLetter(run.run_type || 'easy') }}
+                  {{ getRunTypeLetter(run.notes || 'easy') }}
                 </div>
                 <div class="run-content">
                   <div class="run-header">
@@ -153,10 +153,11 @@
                   <div class="form-row">
                     <label class="form-label">Type:</label>
                     <select v-model="editForm.run_type" class="form-input">
-                      <option value="easy">Recovery</option>
+                      <option value="easy">Easy</option>
                       <option value="tempo">Tempo</option>
                       <option value="interval">Interval</option>
                       <option value="long">Long</option>
+                      <option value="race">Race</option>
                     </select>
                   </div>
                 </div>
@@ -243,14 +244,26 @@ const loadRuns = async () => {
 
 // Edit functionality
 const startEditing = (run: RunResponse) => {
+  console.log('Raw run data:', run)
+  console.log('run.date value:', run.date)
+  console.log('typeof run.date:', typeof run.date)
+
+  const formattedDate = formatDateForInput(run.date)
+  console.log('Formatted date for input:', formattedDate)
+
   editingRunId.value = run.run_id
   editForm.value = {
-    date: run.date,
+    date: formattedDate,
     distance_km: run.distance_km,
     duration: run.duration,
-    run_type: run.run_type
+    run_type: run.notes || 'easy'
   }
   editErrors.value = ''
+}
+
+// Helper function to format date for HTML date input (prevents timezone issues)
+const formatDateForInput = (dateStr: string): string => {
+  return dateStr.split('T')[0]
 }
 
 const cancelEdit = () => {
@@ -281,7 +294,7 @@ const saveEdit = async () => {
       distance_km: editForm.value.distance_km,
       duration: editForm.value.duration,
       run_type: editForm.value.run_type,
-      notes: ''
+      notes: editForm.value.run_type  // Store run_type in notes field
     })
 
     // Refresh the runs list
@@ -326,14 +339,12 @@ const deleteRun = async () => {
 
 // Helper functions
 const formatDate = (dateStr: string): string => {
-  const date = new Date(dateStr)
-  const today = new Date()
-  const diffTime = today.getTime() - date.getTime()
-  const diffDays = Math.floor(diffTime / (1000 * 60 * 60 * 24))
+  // Parse the date string manually to avoid timezone issues
+  const datePart = dateStr.split('T')[0] // Get just the date part (YYYY-MM-DD)
+  const [year, month, day] = datePart.split('-').map(Number)
 
-  if (diffDays === 0) return 'Today'
-  if (diffDays === 1) return 'Yesterday'
-  if (diffDays < 7) return `${diffDays} days ago`
+  // Create date in local timezone (not UTC)
+  const date = new Date(year, month - 1, day) // month is 0-indexed
 
   return date.toLocaleDateString('en-US', {
     weekday: 'short',
@@ -343,11 +354,15 @@ const formatDate = (dateStr: string): string => {
 }
 
 const formatDateShort = (dateStr: string): string => {
-  const date = new Date(dateStr)
-  const month = date.getMonth() + 1
-  const day = date.getDate()
-  const year = date.getFullYear().toString().slice(-2) // Get last 2 digits
-  return `${month}/${day}/${year}`
+  // Parse the date string manually to avoid timezone issues
+  const datePart = dateStr.split('T')[0] // Get just the date part (YYYY-MM-DD)
+  const [year, month, day] = datePart.split('-').map(Number)
+
+  // Create date in local timezone (not UTC)
+  const date = new Date(year, month - 1, day) // month is 0-indexed
+
+  const shortYear = year.toString().slice(-2) // Get last 2 digits
+  return `${month}/${day}/${shortYear}`
 }
 
 const formatRunType = (type: string): string => {
@@ -360,17 +375,18 @@ const formatRunType = (type: string): string => {
   return typeMap[type] || type
 }
 
-const getRunTypeLetter = (type: string): string => {
-  // Handle undefined or null type
-  if (!type) return 'R' // Default to 'R' for Recovery
+const getRunTypeLetter = (notes: string): string => {
+  // Handle undefined or null notes
+  if (!notes) return 'R' // Default to 'R' for Recovery
 
   const letterMap: Record<string, string> = {
-    'easy': 'R',
+    'easy': 'E',
     'tempo': 'T',
     'interval': 'I',
-    'long': 'L'
+    'long': 'L',
+    'race': 'R'  // Added race option
   }
-  return letterMap[type.toLowerCase()] || type.charAt(0).toUpperCase()
+  return letterMap[notes.toLowerCase()] || notes.charAt(0).toUpperCase()
 }
 
 const formatTime = (duration: string): string => {
