@@ -409,8 +409,8 @@ const initCharts = () => {
       datasets: [{
         label: 'Distance (km)',
         data: chartData.value.map(item => item.distance_km),
-        backgroundColor: 'rgba(255, 193, 7, 0.8)', // --yellow-safety with transparency
-        borderColor: '#ffc107', // --yellow-safety
+        backgroundColor: 'rgba(23, 162, 184, 0.8)', // --blue-cyan with transparency
+        borderColor: '#17a2b8', // --blue-cyan
         borderWidth: 2
       }]
     },
