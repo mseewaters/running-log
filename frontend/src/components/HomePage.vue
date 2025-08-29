@@ -2,16 +2,8 @@
 <template>
   <div class="page-container">
     <!-- Header matching Figma -->
-    <header class="app-header">
-      <div class="header-content">
-        <h1 class="app-title">FINISH LINES</h1>
-        <img
-          src="@/assets/runner_noline.png"
-          alt="Runner"
-          class="runner-icon-small"
-        />
-      </div>
-    </header>
+    <!-- Header Component -->
+    <AppHeader @runSaved="onRunSaved" />
 
     <!-- Navigation -->
     <BottomNavigation />
@@ -24,7 +16,7 @@
           <div class="button-content">
             <span class="button-text">Log Run</span>
             <img
-              src="@/assets/runner.png"
+              src="@/assets/runner_noline.png"
               alt="Runner"
               class="button-runner-icon"
             />
@@ -53,7 +45,7 @@
 <script setup lang="ts">
 import { ref, onMounted } from 'vue'
 import BottomNavigation from './BottomNavigation.vue'
-import RunCalendar from './RunCalendar.vue'
+import AppHeader from './AppHeader.vue'
 import ProgressSection from './ProgressSection.vue'
 import QuickLogModal from './QuickLogModal.vue'
 import { runApi, targetApi, type TargetResponse, type RunResponse } from '@/services/api'
@@ -102,6 +94,7 @@ const loadAllRuns = async () => {
     console.error('Failed to load runs:', error)
   }
 }
+
 
 // Modal methods
 const openQuickLogModal = () => {
@@ -211,6 +204,7 @@ const onRunSaved = () => {
 .button-text {
   font-size: 1.3rem;
   font-weight: 700;
+  margin-right: 0.5rem;
   color: var(--yellow-safety);
 }
 
@@ -252,9 +246,9 @@ const onRunSaved = () => {
   }
 
   .log-run-button {
-    padding: 0.5rem 1rem;
+    padding: 0rem 1rem;
     font-size: 1.3rem;
-    min-width: 180px;
+    min-width: 100px;
   }
 
   .button-runner-icon {

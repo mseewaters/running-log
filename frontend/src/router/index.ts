@@ -4,7 +4,7 @@ import LandingPage from '../components/LandingPage.vue'
 import RegistrationPage from '../components/RegistrationPage.vue'
 import TargetSettingPage from '../components/TargetSettingPage.vue'
 import HomePage from '../components/HomePage.vue'
-import MetricsPage from '../components/MetricsPage.vue'
+import MetricsPage from '../components/MetricsPage2.vue'
 import ActivityPage from '@/components/ActivityPage.vue'
 
 
