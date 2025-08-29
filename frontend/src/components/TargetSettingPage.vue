@@ -1,16 +1,8 @@
 <template>
   <div class="page-container">
     <!-- Header matching HomePage -->
-    <header class="app-header">
-      <div class="header-content">
-        <h1 class="app-title">FINISH LINES</h1>
-        <img
-          src="@/assets/runner_noline.png"
-          alt="Runner"
-          class="runner-icon-small"
-        />
-      </div>
-    </header>
+    <!-- Header Component -->
+    <AppHeader @runSaved="onRunSaved" />
 
     <!-- Navigation -->
     <BottomNavigation />
@@ -107,6 +99,7 @@
 <script setup lang="ts">
 import { ref, computed, onMounted } from 'vue'
 import BottomNavigation from './BottomNavigation.vue'
+import AppHeader from './AppHeader.vue'
 import TargetEditModal from './TargetEditModal.vue'
 import { targetApi, runApi, type TargetResponse, type RunResponse } from '@/services/api'
 import { calculateMonthlyTotal, calculateYearlyTotal } from '@/services/progressCalculation'
@@ -298,6 +291,12 @@ const loadRuns = async () => {
     console.error('Failed to load runs:', error)
     showSaveStatus('error', 'Failed to load runs')
   }
+}
+
+// Handle run saved from AppHeader
+const onRunSaved = async () => {
+  // Reload data to include the new run
+  await loadRuns()
 }
 
 // Utility: Show save status toast

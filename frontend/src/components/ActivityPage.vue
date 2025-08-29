@@ -2,16 +2,8 @@
 <template>
   <div class="page-container">
     <!-- Header matching other pages -->
-    <header class="app-header">
-      <div class="header-content">
-        <h1 class="app-title">FINISH LINES</h1>
-        <img
-          src="@/assets/runner_noline.png"
-          alt="Runner"
-          class="runner-icon-small"
-        />
-      </div>
-    </header>
+    <!-- Header Component -->
+    <AppHeader @runSaved="onRunSaved" />
 
     <!-- Navigation -->
     <BottomNavigation />
@@ -199,6 +191,7 @@
 <script setup lang="ts">
 import { ref, onMounted, computed } from 'vue'
 import BottomNavigation from './BottomNavigation.vue'
+import AppHeader from './AppHeader.vue'
 import RunCalendar from './RunCalendar.vue'
 import { runApi, type RunResponse } from '@/services/api'
 
@@ -240,6 +233,12 @@ const loadRuns = async () => {
   } finally {
     isLoading.value = false
   }
+}
+
+// Handle run saved from AppHeader
+const onRunSaved = async () => {
+  // Reload data to include the new run
+  await loadRuns()
 }
 
 // Edit functionality

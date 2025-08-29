@@ -33,6 +33,9 @@
             {{ getPaceIndicator(monthlyProgress?.percentage || 0, monthTimeProgress) }}
           </span>
         </div>
+        <div v-if="averageKmsPerDay" class="daily-average">
+          <span class="daily-average-text">{{ averageKmsPerDay }}km/day needed to meet target</span>
+        </div>
       </div>
 
       <!-- Yearly Progress -->
@@ -136,11 +139,28 @@ const useTargetProgress = () => {
     return calculateProgress(yearlyTotal, currentYearTarget.value)
   })
 
+  const averageKmsPerDay = computed(() => {
+    if (!currentMonthTarget.value || !monthlyProgress.value) return null
+    
+    const remaining = monthlyProgress.value.remaining
+    if (remaining <= 0) return null // Target already met
+    
+    const now = new Date()
+    const daysInMonth = new Date(currentYear, currentMonth, 0).getDate()
+    const remainingDays = daysInMonth - now.getDate() + 1 // Include today
+    
+    if (remainingDays <= 0) return null // Month is over
+    
+    const dailyAverage = remaining / remainingDays
+    return Math.round(dailyAverage * 10) / 10 // Round to 1 decimal place
+  })
+
   return {
     currentMonthTarget,
     currentYearTarget,
     monthlyProgress,
-    yearlyProgress
+    yearlyProgress,
+    averageKmsPerDay
   }
 }
 
@@ -174,7 +194,8 @@ const {
   currentMonthTarget,
   currentYearTarget,
   monthlyProgress,
-  yearlyProgress
+  yearlyProgress,
+  averageKmsPerDay
 } = useTargetProgress()
 const { getPaceIndicator, paceClass } = usePaceIndicators()
 </script>
@@ -313,6 +334,19 @@ const { getPaceIndicator, paceClass } = usePaceIndicators()
   background-color: var(--charcoal-dark);
 }
 
+.daily-average {
+  margin-top: 0.5rem;
+  padding-top: 0.5rem;
+  border-top: 1px solid var(--gray-cool);
+  text-align: center;
+}
+
+.daily-average-text {
+  color: var(--blue-cyan);
+  font-size: 0.8rem;
+  font-weight: 500;
+}
+
 .no-targets {
   text-align: center;
   padding: 1.5rem;
@@ -375,6 +409,10 @@ const { getPaceIndicator, paceClass } = usePaceIndicators()
 
   .pace-indicator {
     padding: 0.2rem 0.4rem;
+  }
+
+  .daily-average-text {
+    font-size: 0.75rem;
   }
 }
 </style>
