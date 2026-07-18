@@ -149,7 +149,7 @@ const months = [
   { value: 12, label: 'December' }
 ]
 
-const years = [2023, 2024, 2025]
+const years = [2023, 2024, 2025, 2026]
 
 // Helper functions for data processing
 const parseDate = (dateStr: string) => new Date(dateStr.split('T')[0])

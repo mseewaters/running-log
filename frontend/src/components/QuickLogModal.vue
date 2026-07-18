@@ -77,6 +77,7 @@
                 <option value="interval">Interval</option>
                 <option value="long">Long</option>
                 <option value="race">Race</option>
+                <option value="C25K">C25K</option>
               </select>
               <div class="select-arrow">▼</div>
             </div>

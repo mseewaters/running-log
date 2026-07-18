@@ -150,6 +150,7 @@
                       <option value="interval">Interval</option>
                       <option value="long">Long</option>
                       <option value="race">Race</option>
+                      <option value="C25K">C25K</option>
                     </select>
                   </div>
                 </div>
@@ -383,7 +384,8 @@ const getRunTypeLetter = (notes: string): string => {
     'tempo': 'T',
     'interval': 'I',
     'long': 'L',
-    'race': 'R'  // Added race option
+    'race': 'R',  // Added race option
+    'C25K': 'C'
   }
   return letterMap[notes.toLowerCase()] || notes.charAt(0).toUpperCase()
 }
