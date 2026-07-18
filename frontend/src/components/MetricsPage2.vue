@@ -116,8 +116,9 @@ Chart.register(
 
 // Reactive data
 const selectedPeriodType = ref<'month' | 'year' | 'all'>('year')
-const selectedMonth = ref<number>(8) // August
-const selectedYear = ref<number>(2025)
+const today = new Date()
+const selectedMonth = ref<number>(today.getMonth() + 1)
+const selectedYear = ref<number>(today.getFullYear())
 const isLoading = ref(true)
 const allRuns = ref<RunResponse[]>([])
 
