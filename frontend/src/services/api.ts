@@ -65,6 +65,7 @@ export interface RunRequest {
   date: string         // YYYY-MM-DD format
   distance_km: number  // Distance in km
   duration: string     // HH:MM:SS format
+  run_type?: string    // Optional run type
   notes?: string       // Optional notes
 }
 

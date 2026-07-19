@@ -273,7 +273,7 @@ const handleSubmit = async () => {
       distance_km: parseFloat(formData.distance),
       duration: normalizeTimeFormat(formData.time),
       run_type: formData.runType,
-      notes: ''
+      notes: formData.runType
     }
 
     console.log('Sending run data:', runData) // Debug log

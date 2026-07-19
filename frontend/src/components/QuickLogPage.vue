@@ -319,7 +319,7 @@ const handleSubmit = async () => {
       distance_km: parseFloat(formData.value.distance),
       duration: normalizeTimeFormat(formData.value.time), // Normalize time format
       run_type: formData.value.runType,
-      notes: ''
+      notes: formData.value.runType
     }
 
     const response = await runApi.createRun(runData)
